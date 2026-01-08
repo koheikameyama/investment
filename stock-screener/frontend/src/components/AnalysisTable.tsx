@@ -1,10 +1,11 @@
 /**
- * AI分析結果テーブルコンポーネント
- * 分析結果を表形式で表示
+ * AI分析結果グリッドコンポーネント
+ * 分析結果をカード形式で表示
  */
 
 import React, { useState } from 'react';
-import type { Analysis, Recommendation } from '../types/analysis';
+import type { Analysis } from '../types/analysis';
+import { AnalysisCard } from './AnalysisCard';
 
 interface AnalysisTableProps {
   analyses: Analysis[];
@@ -15,39 +16,7 @@ type SortField = 'ticker' | 'name' | 'currentPrice' | 'confidenceScore' | 'recom
 type SortOrder = 'asc' | 'desc';
 
 /**
- * 推奨アクションの色分けを取得
- */
-const getRecommendationColor = (recommendation: Recommendation): string => {
-  switch (recommendation) {
-    case 'Buy':
-      return 'bg-green-100 text-green-800 border-green-300';
-    case 'Sell':
-      return 'bg-red-100 text-red-800 border-red-300';
-    case 'Hold':
-      return 'bg-gray-100 text-gray-800 border-gray-300';
-    default:
-      return 'bg-gray-100 text-gray-800 border-gray-300';
-  }
-};
-
-/**
- * 推奨アクションの日本語表示
- */
-const getRecommendationLabel = (recommendation: Recommendation): string => {
-  switch (recommendation) {
-    case 'Buy':
-      return '買い';
-    case 'Sell':
-      return '売り';
-    case 'Hold':
-      return 'ホールド';
-    default:
-      return recommendation;
-  }
-};
-
-/**
- * AI分析結果テーブルコンポーネント
+ * AI分析結果グリッドコンポーネント
  */
 export const AnalysisTable: React.FC<AnalysisTableProps> = ({
   analyses,
@@ -85,8 +54,8 @@ export const AnalysisTable: React.FC<AnalysisTableProps> = ({
         bValue = b.stock.name;
         break;
       case 'currentPrice':
-        aValue = a.currentPrice || 0;
-        bValue = b.currentPrice || 0;
+        aValue = Number(a.currentPrice) || 0;
+        bValue = Number(b.currentPrice) || 0;
         break;
       case 'confidenceScore':
         aValue = a.confidenceScore;
@@ -97,7 +66,8 @@ export const AnalysisTable: React.FC<AnalysisTableProps> = ({
         bValue = b.recommendation;
         break;
       default:
-        return 0;
+        aValue = a.confidenceScore;
+        bValue = b.confidenceScore;
     }
 
     if (aValue < bValue) return sortOrder === 'asc' ? -1 : 1;
@@ -105,138 +75,77 @@ export const AnalysisTable: React.FC<AnalysisTableProps> = ({
     return 0;
   });
 
-  /**
-   * ソートアイコン
-   */
-  const SortIcon: React.FC<{ field: SortField }> = ({ field }) => {
-    if (sortField !== field) {
-      return <span className="text-gray-400">⇅</span>;
-    }
-    return <span className="text-blue-600">{sortOrder === 'asc' ? '↑' : '↓'}</span>;
-  };
-
+  // データがない場合
   if (analyses.length === 0) {
     return (
-      <div className="text-center py-12 text-gray-500">
-        <p>分析結果がありません</p>
+      <div className="flex flex-col items-center justify-center py-20">
+        <svg className="w-24 h-24 text-gray-300 mb-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+        </svg>
+        <h3 className="text-xl font-semibold text-gray-700 mb-2">分析結果がありません</h3>
+        <p className="text-gray-500">バッチ分析を実行して結果を取得してください。</p>
       </div>
     );
   }
 
   return (
-    <div className="overflow-x-auto">
-      <table className="min-w-full divide-y divide-gray-200 bg-white shadow-sm rounded-lg">
-        <thead className="bg-gray-50">
-          <tr>
-            <th
-              className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-              onClick={() => handleSort('ticker')}
-            >
-              <div className="flex items-center space-x-1">
-                <span>ティッカー</span>
-                <SortIcon field="ticker" />
-              </div>
-            </th>
-            <th
-              className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-              onClick={() => handleSort('name')}
-            >
-              <div className="flex items-center space-x-1">
-                <span>銘柄名</span>
-                <SortIcon field="name" />
-              </div>
-            </th>
-            <th
-              className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-              onClick={() => handleSort('currentPrice')}
-            >
-              <div className="flex items-center space-x-1">
-                <span>現在株価</span>
-                <SortIcon field="currentPrice" />
-              </div>
-            </th>
-            <th
-              className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-              onClick={() => handleSort('recommendation')}
-            >
-              <div className="flex items-center space-x-1">
-                <span>推奨</span>
-                <SortIcon field="recommendation" />
-              </div>
-            </th>
-            <th
-              className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+    <div className="p-6">
+      {/* ソートバー */}
+      <div className="mb-8">
+        <div className="flex items-center justify-between flex-wrap gap-4 bg-gradient-to-r from-indigo-50 to-purple-50 rounded-xl p-4 border border-indigo-100">
+          <div className="flex items-center space-x-2">
+            <svg className="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4h13M3 8h9m-9 4h9m5-4v12m0 0l-4-4m4 4l4-4" />
+            </svg>
+            <span className="text-sm font-semibold text-gray-700">並び替え:</span>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <button
               onClick={() => handleSort('confidenceScore')}
-            >
-              <div className="flex items-center space-x-1">
-                <span>信頼度</span>
-                <SortIcon field="confidenceScore" />
-              </div>
-            </th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              理由（短文）
-            </th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              詳細
-            </th>
-          </tr>
-        </thead>
-        <tbody className="bg-white divide-y divide-gray-200">
-          {sortedAnalyses.map((analysis, index) => (
-            <tr
-              key={analysis.id}
-              className={`hover:bg-gray-50 transition-colors ${
-                index % 2 === 0 ? 'bg-white' : 'bg-gray-50'
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                sortField === 'confidenceScore'
+                  ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg'
+                  : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200'
               }`}
             >
-              <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                {analysis.stock.ticker}
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                {analysis.stock.name}
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                {analysis.currentPrice
-                  ? `${analysis.currentPrice.toLocaleString()}`
-                  : 'N/A'}
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap">
-                <span
-                  className={`inline-flex px-3 py-1 text-xs font-semibold rounded-full border ${getRecommendationColor(
-                    analysis.recommendation
-                  )}`}
-                >
-                  {getRecommendationLabel(analysis.recommendation)}
-                </span>
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap">
-                <div className="flex items-center">
-                  <div className="flex-1 h-2 bg-gray-200 rounded-full mr-2 max-w-[100px]">
-                    <div
-                      className="h-2 bg-blue-600 rounded-full"
-                      style={{ width: `${analysis.confidenceScore}%` }}
-                    ></div>
-                  </div>
-                  <span className="text-sm text-gray-900">
-                    {analysis.confidenceScore}%
-                  </span>
-                </div>
-              </td>
-              <td className="px-6 py-4 text-sm text-gray-600 max-w-md truncate">
-                {analysis.reasonShort}
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm">
-                <button
-                  onClick={() => onDetailClick(analysis.id)}
-                  className="text-blue-600 hover:text-blue-800 font-medium hover:underline"
-                >
-                  詳細を見る
-                </button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+              信頼度 {sortField === 'confidenceScore' && (sortOrder === 'asc' ? '↑' : '↓')}
+            </button>
+            <button
+              onClick={() => handleSort('currentPrice')}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                sortField === 'currentPrice'
+                  ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg'
+                  : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200'
+              }`}
+            >
+              株価 {sortField === 'currentPrice' && (sortOrder === 'asc' ? '↑' : '↓')}
+            </button>
+            <button
+              onClick={() => handleSort('ticker')}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                sortField === 'ticker'
+                  ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg'
+                  : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200'
+              }`}
+            >
+              ティッカー {sortField === 'ticker' && (sortOrder === 'asc' ? '↑' : '↓')}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* カードグリッド */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {sortedAnalyses.map((analysis, index) => (
+          <div
+            key={analysis.id}
+            className="animate-fade-in"
+            style={{ animationDelay: `${index * 50}ms` }}
+          >
+            <AnalysisCard analysis={analysis} onDetailClick={onDetailClick} />
+          </div>
+        ))}
+      </div>
     </div>
   );
 };

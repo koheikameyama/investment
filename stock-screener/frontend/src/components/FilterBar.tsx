@@ -65,28 +65,49 @@ export const FilterBar: React.FC<FilterBarProps> = ({
           <span className="text-base font-semibold text-gray-800">推奨フィルター</span>
         </div>
         <div className="flex flex-wrap gap-3">
-          {options.map((option) => (
-            <button
-              key={option.value}
-              onClick={() => onRecommendationChange(option.value)}
-              className={`
-                group relative px-5 py-2.5 rounded-xl font-medium text-sm
-                transition-all duration-300 transform hover:scale-105
-                ${selectedRecommendation === option.value
-                  ? `bg-gradient-to-r ${option.activeGradient} text-white shadow-lg`
-                  : `bg-white/80 text-gray-700 hover:bg-gradient-to-r hover:${option.gradient} hover:text-white border-2 border-gray-200 hover:border-transparent`
-                }
-              `}
-            >
-              <div className="flex items-center space-x-2">
-                {option.icon}
-                <span>{option.label}</span>
-              </div>
-              {selectedRecommendation === option.value && (
-                <div className="absolute inset-0 rounded-xl bg-white/20 animate-pulse"></div>
-              )}
-            </button>
-          ))}
+          {options.map((option) => {
+            const isActive = selectedRecommendation === option.value;
+            let buttonClass = 'group relative px-5 py-2.5 rounded-xl font-medium text-sm transition-all duration-300 transform hover:scale-105 ';
+
+            if (isActive) {
+              if (option.value === 'All') {
+                buttonClass += 'bg-gradient-to-r from-slate-600 to-slate-700 text-white shadow-lg';
+              } else if (option.value === 'Buy') {
+                buttonClass += 'bg-gradient-to-r from-green-600 to-emerald-700 text-white shadow-lg';
+              } else if (option.value === 'Sell') {
+                buttonClass += 'bg-gradient-to-r from-red-600 to-rose-700 text-white shadow-lg';
+              } else if (option.value === 'Hold') {
+                buttonClass += 'bg-gradient-to-r from-amber-600 to-orange-700 text-white shadow-lg';
+              }
+            } else {
+              buttonClass += 'bg-white/80 text-gray-700 border-2 border-gray-200 hover:border-transparent hover:text-white ';
+              if (option.value === 'All') {
+                buttonClass += 'hover:bg-gradient-to-r hover:from-slate-500 hover:to-slate-600';
+              } else if (option.value === 'Buy') {
+                buttonClass += 'hover:bg-gradient-to-r hover:from-green-500 hover:to-emerald-600';
+              } else if (option.value === 'Sell') {
+                buttonClass += 'hover:bg-gradient-to-r hover:from-red-500 hover:to-rose-600';
+              } else if (option.value === 'Hold') {
+                buttonClass += 'hover:bg-gradient-to-r hover:from-amber-500 hover:to-orange-600';
+              }
+            }
+
+            return (
+              <button
+                key={option.value}
+                onClick={() => onRecommendationChange(option.value)}
+                className={buttonClass}
+              >
+                <div className="flex items-center space-x-2">
+                  {option.icon}
+                  <span>{option.label}</span>
+                </div>
+                {isActive && (
+                  <div className="absolute inset-0 rounded-xl bg-white/20 animate-pulse"></div>
+                )}
+              </button>
+            );
+          })}
         </div>
       </div>
     </div>
