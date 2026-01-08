@@ -13,10 +13,10 @@ AIによる日本株・米国株の投資分析ツール。シンプルで使い
 ## 🛠 技術スタック
 
 **フルスタック**
-- Next.js 15 (App Router)
+- Next.js 15 (App Router + Turbopack)
 - React 19
 - TypeScript
-- Tailwind CSS v4
+- Tailwind CSS v3
 
 **データベース**
 - SQLite (ローカルファイル)
@@ -41,16 +41,27 @@ AIによる日本株・米国株の投資分析ツール。シンプルで使い
 ### インストール
 
 ```bash
+# リポジトリをクローン
+git clone https://github.com/koheikameyama/stock-analyzer.git
+cd stock-analyzer
+
 # 依存関係のインストール
 npm install
 
-# データベースのセットアップ
-npx prisma db push
-
 # 環境変数の設定
 cp .env.example .env
-# .envファイルを編集してOpenAI APIキーを設定（オプション）
+# .envファイルを編集してOpenAI APIキーを設定
+# OPENAI_API_KEY=your_actual_api_key_here
+
+# データベースのセットアップ
+npx prisma generate  # Prisma Clientを生成
+npx prisma db push   # データベーススキーマを適用
+
+# （オプション）初期データを投入する場合
+# npm run db:seed
 ```
+
+**重要**: `.env`ファイルに実際のOpenAI APIキーを設定してください。APIキーは[OpenAI Platform](https://platform.openai.com/api-keys)で取得できます。
 
 ### 起動
 
@@ -122,9 +133,34 @@ stock-analyzer/
 
 SQLiteを使用しているため、PostgreSQLのセットアップは不要です。
 
-- ファイル: `dev.db`
-- 管理: `npm run db:studio`
-- マイグレーション: `npx prisma db push`
+### データベースファイル
+- ファイル: `prisma/dev.db`
+- 初回起動時に自動的に作成されます
+- データは永続化されるため、再起動後もデータは保持されます
+
+### よく使うコマンド
+```bash
+# データベース管理画面を開く（データの閲覧・編集）
+npm run db:studio
+
+# Prisma Clientの再生成（スキーマ変更後）
+npm run db:generate
+
+# データベーススキーマを同期（スキーマ変更後）
+npm run db:push
+```
+
+### データベースをリセットしたい場合
+```bash
+# データベースファイルを削除
+rm prisma/dev.db
+
+# スキーマを再適用
+npx prisma db push
+
+# （オプション）初期データを再投入
+npm run db:seed
+```
 
 ## 🐍 バッチ分析
 
