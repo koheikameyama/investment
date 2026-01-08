@@ -1,4 +1,4 @@
-# 銘柄スクリーニングツール
+# AI株式分析ツール (Stock Analyzer)
 
 AIによる日本株・米国株の投資分析ツール。シンプルで使いやすい、個人投資家向けのアプリケーションです。
 
@@ -91,7 +91,7 @@ npm start
 ## 📁 プロジェクト構造
 
 ```
-stock-screener/
+stock-analyzer/
 ├── app/                    # Next.js App Router
 │   ├── api/               # APIエンドポイント
 │   │   ├── analyses/     # 分析API
@@ -112,7 +112,9 @@ stock-screener/
 │   └── schema.prisma
 ├── scripts/              # バッチスクリプト
 │   └── batch_analysis.py
-├── dev.db                # SQLiteデータベース
+├── docs/                 # ドキュメント
+│   ├── DEPLOYMENT.md
+│   └── ...
 └── package.json
 ```
 
