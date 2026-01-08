@@ -1,10 +1,12 @@
 /**
  * バッチ処理サービス
  * 銘柄分析のバッチジョブを管理
+ * Python + yfinanceスクリプトを呼び出して分析を実行
  */
 
 import { PrismaClient } from '@prisma/client';
-import { AnalysisService, AnalysisResult } from './analysis.service';
+import { spawn } from 'child_process';
+import * as path from 'path';
 
 const prisma = new PrismaClient();
 
@@ -27,6 +29,7 @@ export interface BatchJobResult {
 export class BatchService {
   /**
    * 全銘柄の分析バッチジョブを実行
+   * Pythonスクリプト（yfinance）を使用してデータ取得と分析を実行
    * @returns バッチジョブの実行結果
    */
   static async runStockAnalysisBatch(): Promise<BatchJobResult> {
@@ -36,166 +39,125 @@ export class BatchService {
     console.log(
       `\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`
     );
-    console.log(`🚀 株式分析バッチジョブ開始`);
+    console.log(`🚀 株式分析バッチジョブ開始 (Python + yfinance)`);
     console.log(`⏰ 開始時刻: ${jobDate.toLocaleString('ja-JP')}`);
     console.log(
       `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`
     );
 
-    try {
-      // 1. 対象銘柄リストをデータベースから取得
-      const stocks = await prisma.stock.findMany({
-        select: {
-          ticker: true,
-          market: true,
-        },
+    return new Promise((resolve) => {
+      // Pythonスクリプトのパス
+      const scriptPath = path.join(
+        __dirname,
+        '..',
+        '..',
+        'scripts',
+        'batch_analysis.py'
+      );
+
+      console.log(`📝 Pythonスクリプトを実行: ${scriptPath}\n`);
+
+      // Pythonスクリプトを実行
+      const pythonProcess = spawn('python3', [scriptPath]);
+
+      // 標準出力をリアルタイムで表示
+      pythonProcess.stdout.on('data', (data: Buffer) => {
+        process.stdout.write(data.toString());
       });
 
-      if (stocks.length === 0) {
-        console.warn('⚠️ 分析対象の銘柄が見つかりませんでした');
+      // 標準エラー出力を表示
+      pythonProcess.stderr.on('data', (data: Buffer) => {
+        process.stderr.write(data.toString());
+      });
+
+      // プロセス終了時の処理
+      pythonProcess.on('close', async (code: number) => {
         const duration = Date.now() - startTime;
 
-        // バッチジョブログを記録
+        if (code === 0) {
+          console.log(
+            `\n✅ Pythonバッチスクリプト正常終了（終了コード: ${code}）`
+          );
+
+          // データベースから最新のバッチジョブログを取得
+          const latestLog = await this.getLatestBatchJobLog();
+
+          if (latestLog) {
+            resolve({
+              jobDate: latestLog.jobDate,
+              status: latestLog.status as 'success' | 'partial_success' | 'failure',
+              totalStocks: latestLog.totalStocks,
+              successCount: latestLog.successCount,
+              failureCount: latestLog.failureCount,
+              errorMessage: latestLog.errorMessage || undefined,
+              duration: latestLog.duration,
+            });
+          } else {
+            // ログが見つからない場合（想定外）
+            resolve({
+              jobDate,
+              status: 'success',
+              totalStocks: 0,
+              successCount: 0,
+              failureCount: 0,
+              duration,
+            });
+          }
+        } else {
+          console.error(
+            `\n❌ Pythonバッチスクリプト異常終了（終了コード: ${code}）`
+          );
+
+          // エラーログを記録
+          await this.logBatchJob({
+            jobDate,
+            status: 'failure',
+            totalStocks: 0,
+            successCount: 0,
+            failureCount: 0,
+            errorMessage: `Pythonスクリプトが異常終了しました（終了コード: ${code}）`,
+            duration,
+          });
+
+          resolve({
+            jobDate,
+            status: 'failure',
+            totalStocks: 0,
+            successCount: 0,
+            failureCount: 0,
+            errorMessage: `Pythonスクリプトが異常終了しました（終了コード: ${code}）`,
+            duration,
+          });
+        }
+      });
+
+      // エラー発生時の処理
+      pythonProcess.on('error', async (error: Error) => {
+        const duration = Date.now() - startTime;
+        console.error(`\n❌ Pythonスクリプト実行エラー: ${error.message}`);
+
+        // エラーログを記録
         await this.logBatchJob({
           jobDate,
           status: 'failure',
           totalStocks: 0,
           successCount: 0,
           failureCount: 0,
-          errorMessage: '分析対象の銘柄が見つかりませんでした',
+          errorMessage: `Pythonスクリプト実行エラー: ${error.message}`,
           duration,
         });
 
-        return {
+        resolve({
           jobDate,
           status: 'failure',
           totalStocks: 0,
           successCount: 0,
           failureCount: 0,
-          errorMessage: '分析対象の銘柄が見つかりませんでした',
+          errorMessage: `Pythonスクリプト実行エラー: ${error.message}`,
           duration,
-        };
-      }
-
-      console.log(`📋 対象銘柄数: ${stocks.length}件\n`);
-
-      // 2. 市場別に銘柄を分類
-      const jpStocks = stocks
-        .filter((s) => s.market === 'JP')
-        .map((s) => s.ticker);
-      const usStocks = stocks
-        .filter((s) => s.market === 'US')
-        .map((s) => s.ticker);
-
-      const allResults: AnalysisResult[] = [];
-
-      // 3. 日本株の分析
-      if (jpStocks.length > 0) {
-        console.log(`🇯🇵 日本株の分析開始（${jpStocks.length}銘柄）\n`);
-        const jpResults = await AnalysisService.analyzeMultipleStocks(
-          jpStocks,
-          'JP'
-        );
-        allResults.push(...jpResults);
-      }
-
-      // 4. 米国株の分析
-      if (usStocks.length > 0) {
-        console.log(`\n🇺🇸 米国株の分析開始（${usStocks.length}銘柄）\n`);
-        const usResults = await AnalysisService.analyzeMultipleStocks(
-          usStocks,
-          'US'
-        );
-        allResults.push(...usResults);
-      }
-
-      // 5. 結果の集計
-      const successCount = allResults.filter((r) => r.success).length;
-      const failureCount = allResults.filter((r) => !r.success).length;
-      const duration = Date.now() - startTime;
-
-      // 6. ステータスの判定
-      let status: 'success' | 'partial_success' | 'failure';
-      let errorMessage: string | undefined;
-
-      if (successCount === stocks.length) {
-        status = 'success';
-      } else if (successCount > 0) {
-        status = 'partial_success';
-        errorMessage = `${failureCount}件の銘柄分析に失敗しました`;
-      } else {
-        status = 'failure';
-        errorMessage = 'すべての銘柄分析に失敗しました';
-      }
-
-      // 7. バッチジョブログを記録
-      await this.logBatchJob({
-        jobDate,
-        status,
-        totalStocks: stocks.length,
-        successCount,
-        failureCount,
-        errorMessage,
-        duration,
+        });
       });
-
-      // 8. 結果のサマリー表示
-      console.log(
-        `\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`
-      );
-      console.log(`✅ バッチジョブ完了`);
-      console.log(`⏱️  処理時間: ${(duration / 1000).toFixed(2)}秒`);
-      console.log(`📊 結果サマリー:`);
-      console.log(`   - 対象銘柄数: ${stocks.length}`);
-      console.log(`   - 成功: ${successCount}`);
-      console.log(`   - 失敗: ${failureCount}`);
-      console.log(`   - ステータス: ${status}`);
-      if (errorMessage) {
-        console.log(`   - エラー: ${errorMessage}`);
-      }
-      console.log(
-        `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`
-      );
-
-      return {
-        jobDate,
-        status,
-        totalStocks: stocks.length,
-        successCount,
-        failureCount,
-        errorMessage,
-        duration,
-      };
-    } catch (error) {
-      const duration = Date.now() - startTime;
-      const errorMessage =
-        error instanceof Error ? error.message : String(error);
-
-      console.error(
-        `\n❌ バッチジョブでエラーが発生しました: ${errorMessage}\n`
-      );
-
-      // エラーログを記録
-      await this.logBatchJob({
-        jobDate,
-        status: 'failure',
-        totalStocks: 0,
-        successCount: 0,
-        failureCount: 0,
-        errorMessage: `バッチジョブエラー: ${errorMessage}`,
-        duration,
-      });
-
-      return {
-        jobDate,
-        status: 'failure',
-        totalStocks: 0,
-        successCount: 0,
-        failureCount: 0,
-        errorMessage: `バッチジョブエラー: ${errorMessage}`,
-        duration,
-      };
-    }
+    });
   }
 
   /**
