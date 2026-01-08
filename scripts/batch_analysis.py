@@ -11,6 +11,7 @@ import uuid
 from datetime import datetime
 from decimal import Decimal
 from typing import Optional, Dict, Any, List
+from collections import deque
 import json
 
 import yfinance as yf
@@ -29,6 +30,87 @@ OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
 
 # OpenAIクライアント初期化
 client = OpenAI(api_key=OPENAI_API_KEY)
+
+# OpenAI API料金（gpt-4o-mini）
+PRICING = {
+    'input_per_1m_tokens': 0.150,  # $0.150 / 1M tokens
+    'output_per_1m_tokens': 0.600,  # $0.600 / 1M tokens
+}
+
+
+class APIUsageTracker:
+    """OpenAI API使用量トラッカー"""
+    def __init__(self):
+        self.total_input_tokens = 0
+        self.total_output_tokens = 0
+        self.total_requests = 0
+
+    def add_usage(self, input_tokens: int, output_tokens: int):
+        """使用量を追加"""
+        self.total_input_tokens += input_tokens
+        self.total_output_tokens += output_tokens
+        self.total_requests += 1
+
+    def get_cost(self) -> float:
+        """総費用を計算（USD）"""
+        input_cost = (self.total_input_tokens / 1_000_000) * PRICING['input_per_1m_tokens']
+        output_cost = (self.total_output_tokens / 1_000_000) * PRICING['output_per_1m_tokens']
+        return input_cost + output_cost
+
+    def print_summary(self):
+        """費用サマリーを表示"""
+        input_cost = (self.total_input_tokens / 1_000_000) * PRICING['input_per_1m_tokens']
+        output_cost = (self.total_output_tokens / 1_000_000) * PRICING['output_per_1m_tokens']
+        total_cost = input_cost + output_cost
+
+        print("\n" + "=" * 50)
+        print("💰 OpenAI API使用量サマリー")
+        print("=" * 50)
+        print(f"🔢 総リクエスト数: {self.total_requests:,}")
+        print(f"📥 入力トークン数: {self.total_input_tokens:,} tokens")
+        print(f"📤 出力トークン数: {self.total_output_tokens:,} tokens")
+        print(f"💵 入力費用: ${input_cost:.4f}")
+        print(f"💵 出力費用: ${output_cost:.4f}")
+        print(f"💰 総費用: ${total_cost:.4f} (約¥{total_cost * 150:.2f})")
+        print("=" * 50)
+
+
+class StockQueue:
+    """株式分析キュー管理"""
+    def __init__(self, stocks: List[Dict[str, Any]]):
+        self.queue = deque(stocks)
+        self.total = len(stocks)
+        self.processed = 0
+        self.success = 0
+        self.failed = 0
+
+    def get_next(self) -> Optional[Dict[str, Any]]:
+        """次の銘柄を取得"""
+        if self.queue:
+            return self.queue.popleft()
+        return None
+
+    def mark_success(self):
+        """成功をカウント"""
+        self.processed += 1
+        self.success += 1
+
+    def mark_failure(self):
+        """失敗をカウント"""
+        self.processed += 1
+        self.failed += 1
+
+    def get_progress(self) -> str:
+        """進捗状況を取得"""
+        return f"[{self.processed}/{self.total}] 成功:{self.success} 失敗:{self.failed}"
+
+    def is_empty(self) -> bool:
+        """キューが空か確認"""
+        return len(self.queue) == 0
+
+
+# グローバルトラッカー
+usage_tracker = APIUsageTracker()
 
 
 class StockData:
@@ -167,11 +249,18 @@ def analyze_with_openai(stock_data: StockData) -> Dict[str, Any]:
             timeout=30
         )
 
+        # 使用量を追跡
+        if response.usage:
+            usage_tracker.add_usage(
+                response.usage.prompt_tokens,
+                response.usage.completion_tokens
+            )
+
         # レスポンス解析
         content = response.choices[0].message.content
         result = json.loads(content)
 
-        print(f"  ✅ {stock_data.ticker} のAI分析完了: {result['recommendation']}")
+        print(f"  ✅ {stock_data.ticker} のAI分析完了: {result['recommendation']} (tokens: {response.usage.prompt_tokens + response.usage.completion_tokens})")
 
         return result
 
@@ -426,41 +515,52 @@ def main():
             cur.execute('SELECT id, ticker, market FROM stocks ORDER BY ticker')
             stocks = cur.fetchall()
 
-        total_stocks = len(stocks)
-        print(f"📋 対象銘柄数: {total_stocks}件\n")
+        # キューを作成
+        queue = StockQueue(stocks)
+        print(f"📋 対象銘柄数: {queue.total}件\n")
 
-        if total_stocks == 0:
+        if queue.total == 0:
             print("⚠️ 分析対象の銘柄が見つかりませんでした")
             log_batch_job(conn, start_time, 0, 0, 0, "分析対象の銘柄が見つかりませんでした")
             return
 
-        # 各銘柄を分析
-        for i, stock in enumerate(stocks, 1):
-            print(f"\n[{i}/{total_stocks}] {stock['ticker']} ({stock['market']}) の分析開始")
+        # キューから銘柄を1つずつ処理
+        while not queue.is_empty():
+            stock = queue.get_next()
+            print(f"\n{queue.get_progress()} {stock['ticker']} ({stock['market']}) の分析開始")
             print("-" * 50)
 
-            # 株価データ取得
-            stock_data = fetch_stock_data(stock['ticker'], stock['market'])
+            try:
+                # 株価データ取得
+                stock_data = fetch_stock_data(stock['ticker'], stock['market'])
 
-            if stock_data.error or stock_data.current_price == 0:
-                print(f"  ⚠️ {stock['ticker']}: データ取得失敗のためスキップ")
-                failure_count += 1
-                continue
+                if stock_data.error or stock_data.current_price == 0:
+                    print(f"  ⚠️ {stock['ticker']}: データ取得失敗のためスキップ")
+                    queue.mark_failure()
+                    failure_count += 1
+                    continue
 
-            # AI分析実行
-            analysis = analyze_with_openai(stock_data)
+                # AI分析実行
+                analysis = analyze_with_openai(stock_data)
 
-            # データベースに保存
-            if save_analysis_to_db(conn, stock['id'], stock_data, analysis):
-                # 株価履歴も保存
-                save_price_history_to_db(conn, stock['id'], stock_data)
-                success_count += 1
-            else:
+                # データベースに保存
+                if save_analysis_to_db(conn, stock['id'], stock_data, analysis):
+                    # 株価履歴も保存
+                    save_price_history_to_db(conn, stock['id'], stock_data)
+                    queue.mark_success()
+                    success_count += 1
+                else:
+                    queue.mark_failure()
+                    failure_count += 1
+
+            except Exception as e:
+                print(f"  ❌ {stock['ticker']}: 処理中にエラー発生: {e}")
+                queue.mark_failure()
                 failure_count += 1
 
         # バッチジョブログを記録
         error_message = f"{failure_count}件の銘柄分析に失敗しました" if failure_count > 0 else None
-        log_batch_job(conn, start_time, total_stocks, success_count, failure_count, error_message)
+        log_batch_job(conn, start_time, queue.total, success_count, failure_count, error_message)
 
     except Exception as e:
         print(f"\n❌ バッチジョブでエラーが発生しました: {e}")
@@ -479,10 +579,13 @@ def main():
     print("✅ バッチジョブ完了")
     print(f"⏱️  処理時間: {duration:.2f}秒")
     print("📊 結果サマリー:")
-    print(f"   - 対象銘柄数: {total_stocks}")
+    print(f"   - 対象銘柄数: {queue.total}")
     print(f"   - 成功: {success_count}")
     print(f"   - 失敗: {failure_count}")
-    print("=" * 50 + "\n")
+    print("=" * 50)
+
+    # OpenAI API費用サマリーを表示
+    usage_tracker.print_summary()
 
 
 if __name__ == "__main__":
