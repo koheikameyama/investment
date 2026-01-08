@@ -1,0 +1,30 @@
+{
+  "name": "stock-analyzer",
+  "version": "1.0.0",
+  "private": true,
+  "description": "AI株式分析ツール - Webアプリケーションとバッチ処理",
+  "scripts": {
+    "dev": "cd web && npm run dev",
+    "build": "cd web && npm run build",
+    "start": "cd web && npm run start",
+    "lint": "cd web && npm run lint",
+    "db:generate": "npx prisma generate",
+    "db:push": "npx prisma db push",
+    "db:studio": "npx prisma studio",
+    "db:seed": "tsx prisma/seed.ts",
+    "batch": "cd batch && python3 batch_analysis.py",
+    "batch:install": "cd batch && pip3 install -r requirements.txt",
+    "web:install": "cd web && npm install",
+    "install:all": "npm run web:install && npm run batch:install"
+  },
+  "workspaces": [
+    "web"
+  ],
+  "devDependencies": {
+    "prisma": "^6.2.0",
+    "tsx": "^4.19.2"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.2.0"
+  }
+}
