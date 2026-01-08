@@ -43,6 +43,7 @@ class StockData:
         self.dividend_yield: Optional[Decimal] = None
         self.company_name: str = ""
         self.sector: str = ""
+        self.price_history: List[Dict[str, Any]] = []
         self.error: Optional[str] = None
 
 
@@ -85,7 +86,25 @@ def fetch_stock_data(ticker: str, market: str) -> StockData:
         stock_data.roe = Decimal(str(info.get('returnOnEquity', 0) * 100)) if info.get('returnOnEquity') else None
         stock_data.dividend_yield = Decimal(str(info.get('dividendYield', 0) * 100)) if info.get('dividendYield') else None
 
-        print(f"  ✅ {ticker} のデータ取得完了")
+        # 過去30日の株価履歴を取得
+        try:
+            hist = stock.history(period="1mo")  # 過去1ヶ月
+            if not hist.empty:
+                for idx in range(len(hist)):
+                    date = hist.index[idx]
+                    row = hist.iloc[idx]
+                    stock_data.price_history.append({
+                        'date': date.strftime('%Y-%m-%d'),
+                        'open': float(row['Open']),
+                        'high': float(row['High']),
+                        'low': float(row['Low']),
+                        'close': float(row['Close']),
+                        'volume': int(row['Volume'])
+                    })
+        except Exception as e:
+            print(f"  ⚠️ 株価履歴の取得に失敗: {e}")
+
+        print(f"  ✅ {ticker} のデータ取得完了（株価履歴: {len(stock_data.price_history)}件）")
 
         # レート制限対策: リクエスト間に1秒待機
         time.sleep(1)
@@ -169,7 +188,7 @@ def analyze_with_openai(stock_data: StockData) -> Dict[str, Any]:
 
 def save_analysis_to_db(conn, stock_id: str, stock_data: StockData, analysis: Dict[str, Any]) -> bool:
     """
-    分析結果をデータベースに保存
+    分析結果をデータベースに保存（既存データがあれば更新）
 
     Args:
         conn: データベース接続
@@ -182,51 +201,145 @@ def save_analysis_to_db(conn, stock_id: str, stock_data: StockData, analysis: Di
     """
     try:
         with conn.cursor() as cur:
-            # UUID生成
-            analysis_id = str(uuid.uuid4())
             now = datetime.now()
 
+            # 既存の分析データを確認
             cur.execute("""
-                INSERT INTO analyses (
-                    id,
-                    "stockId",
-                    "analysisDate",
-                    recommendation,
-                    "confidenceScore",
-                    "reasonShort",
-                    "reasonDetailed",
-                    "currentPrice",
-                    "peRatio",
-                    "pbRatio",
-                    roe,
-                    "dividendYield",
-                    "createdAt",
-                    "updatedAt"
-                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-            """, (
-                analysis_id,
-                stock_id,
-                now,
-                analysis['recommendation'],
-                analysis['confidence_score'],
-                analysis['reason_short'],
-                analysis['reason_detailed'],
-                stock_data.current_price,
-                stock_data.pe_ratio,
-                stock_data.pb_ratio,
-                stock_data.roe,
-                stock_data.dividend_yield,
-                now,
-                now
-            ))
+                SELECT id FROM analyses WHERE "stockId" = %s LIMIT 1
+            """, (stock_id,))
+
+            existing = cur.fetchone()
+
+            if existing:
+                # 既存データを更新
+                cur.execute("""
+                    UPDATE analyses SET
+                        "analysisDate" = %s,
+                        recommendation = %s,
+                        "confidenceScore" = %s,
+                        "reasonShort" = %s,
+                        "reasonDetailed" = %s,
+                        "currentPrice" = %s,
+                        "peRatio" = %s,
+                        "pbRatio" = %s,
+                        roe = %s,
+                        "dividendYield" = %s,
+                        "updatedAt" = %s
+                    WHERE id = %s
+                """, (
+                    now,
+                    analysis['recommendation'],
+                    analysis['confidence_score'],
+                    analysis['reason_short'],
+                    analysis['reason_detailed'],
+                    stock_data.current_price,
+                    stock_data.pe_ratio,
+                    stock_data.pb_ratio,
+                    stock_data.roe,
+                    stock_data.dividend_yield,
+                    now,
+                    existing['id']
+                ))
+                print(f"  🔄 {stock_data.ticker} の分析結果を更新しました")
+            else:
+                # 新規作成
+                analysis_id = str(uuid.uuid4())
+                cur.execute("""
+                    INSERT INTO analyses (
+                        id,
+                        "stockId",
+                        "analysisDate",
+                        recommendation,
+                        "confidenceScore",
+                        "reasonShort",
+                        "reasonDetailed",
+                        "currentPrice",
+                        "peRatio",
+                        "pbRatio",
+                        roe,
+                        "dividendYield",
+                        "createdAt",
+                        "updatedAt"
+                    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                """, (
+                    analysis_id,
+                    stock_id,
+                    now,
+                    analysis['recommendation'],
+                    analysis['confidence_score'],
+                    analysis['reason_short'],
+                    analysis['reason_detailed'],
+                    stock_data.current_price,
+                    stock_data.pe_ratio,
+                    stock_data.pb_ratio,
+                    stock_data.roe,
+                    stock_data.dividend_yield,
+                    now,
+                    now
+                ))
+                print(f"  💾 {stock_data.ticker} の分析結果を新規保存しました")
 
         conn.commit()
-        print(f"  💾 {stock_data.ticker} の分析結果を保存しました")
         return True
 
     except Exception as e:
         conn.rollback()
         print(f"  ❌ {stock_data.ticker} の保存失敗: {e}")
+        return False
+
+
+def save_price_history_to_db(conn, stock_id: str, stock_data: StockData) -> bool:
+    """
+    株価履歴をデータベースに保存
+
+    Args:
+        conn: データベース接続
+        stock_id: 銘柄ID
+        stock_data: 株式データ
+
+    Returns:
+        bool: 保存成功の可否
+    """
+    try:
+        with conn.cursor() as cur:
+            for price_data in stock_data.price_history:
+                # 既存データがあれば更新、なければ挿入
+                cur.execute("""
+                    INSERT INTO price_history (
+                        "stockId",
+                        date,
+                        open,
+                        high,
+                        low,
+                        close,
+                        volume,
+                        "createdAt",
+                        "updatedAt"
+                    ) VALUES (%s, %s, %s, %s, %s, %s, %s, NOW(), NOW())
+                    ON CONFLICT ("stockId", date) DO UPDATE SET
+                        open = EXCLUDED.open,
+                        high = EXCLUDED.high,
+                        low = EXCLUDED.low,
+                        close = EXCLUDED.close,
+                        volume = EXCLUDED.volume,
+                        "updatedAt" = NOW()
+                """, (
+                    stock_id,
+                    price_data['date'],
+                    price_data['open'],
+                    price_data['high'],
+                    price_data['low'],
+                    price_data['close'],
+                    price_data['volume']
+                ))
+
+        conn.commit()
+        print(f"  📈 {stock_data.ticker} の株価履歴を保存しました（{len(stock_data.price_history)}件）")
+        return True
+
+    except Exception as e:
+        conn.rollback()
+        print(f"  ❌ {stock_data.ticker} の株価履歴保存失敗: {e}")
         return False
 
 
@@ -339,6 +452,8 @@ def main():
 
             # データベースに保存
             if save_analysis_to_db(conn, stock['id'], stock_data, analysis):
+                # 株価履歴も保存
+                save_price_history_to_db(conn, stock['id'], stock_data)
                 success_count += 1
             else:
                 failure_count += 1

@@ -26,7 +26,6 @@ export const AnalysisCard: React.FC<AnalysisCardProps> = ({
           bgColor: 'bg-gradient-to-br from-emerald-50 to-emerald-100',
           borderColor: 'border-emerald-300',
           textColor: 'text-emerald-700',
-          badgeColor: 'bg-emerald-500',
           description: '今が買い時かも！'
         };
       case 'Sell':
@@ -36,7 +35,6 @@ export const AnalysisCard: React.FC<AnalysisCardProps> = ({
           bgColor: 'bg-gradient-to-br from-red-50 to-red-100',
           borderColor: 'border-red-300',
           textColor: 'text-red-700',
-          badgeColor: 'bg-red-500',
           description: '売却を検討しましょう'
         };
       case 'Hold':
@@ -46,7 +44,6 @@ export const AnalysisCard: React.FC<AnalysisCardProps> = ({
           bgColor: 'bg-gradient-to-br from-amber-50 to-amber-100',
           borderColor: 'border-amber-300',
           textColor: 'text-amber-700',
-          badgeColor: 'bg-amber-500',
           description: 'しばらく保有がおすすめ'
         };
       default:
@@ -56,7 +53,6 @@ export const AnalysisCard: React.FC<AnalysisCardProps> = ({
           bgColor: 'bg-surface-50',
           borderColor: 'border-surface-200',
           textColor: 'text-surface-700',
-          badgeColor: 'bg-surface-500',
           description: ''
         };
     }
@@ -102,20 +98,15 @@ export const AnalysisCard: React.FC<AnalysisCardProps> = ({
     >
       {/* ヘッダー：推奨アクションバッジ */}
       <div className={`${config.bgColor} ${config.borderColor} border-2 rounded-lg px-4 py-3 mb-4`}>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="text-2xl">{config.emoji}</span>
-            <div>
-              <div className={`text-lg font-bold ${config.textColor}`}>
-                {config.label}推奨
-              </div>
-              <div className={`text-xs ${config.textColor} opacity-75`}>
-                {config.description}
-              </div>
+        <div className="flex items-center gap-2">
+          <span className="text-2xl">{config.emoji}</span>
+          <div>
+            <div className={`text-lg font-bold ${config.textColor}`}>
+              {config.label}推奨
             </div>
-          </div>
-          <div className={`${config.badgeColor} text-white px-3 py-1 rounded-full text-xs font-bold`}>
-            AI判定
+            <div className={`text-xs ${config.textColor} opacity-75`}>
+              {config.description}
+            </div>
           </div>
         </div>
       </div>

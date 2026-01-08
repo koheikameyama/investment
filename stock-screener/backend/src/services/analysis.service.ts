@@ -209,7 +209,7 @@ export class AnalysisService {
   }
 
   /**
-   * 最新の分析結果を取得
+   * 最新の分析結果を取得（各銘柄につき最新1件のみ）
    * @param market 市場（JP/US、オプション）
    * @param recommendation 推奨フィルター（Buy/Sell/Hold、オプション）
    * @returns 分析結果の配列
@@ -218,46 +218,41 @@ export class AnalysisService {
     market?: 'JP' | 'US',
     recommendation?: 'Buy' | 'Sell' | 'Hold'
   ) {
-    // 最新の分析日時を取得
-    const latestAnalysisDate = await prisma.analysis.findFirst({
-      orderBy: { analysisDate: 'desc' },
-      select: { analysisDate: true },
+    // 1. 対象銘柄を取得
+    const stocks = await prisma.stock.findMany({
+      where: market ? { market } : undefined,
+      select: { id: true, ticker: true, name: true, market: true, sector: true },
     });
 
-    if (!latestAnalysisDate) {
-      return [];
-    }
-
-    // 同じ日時の分析結果を取得
-    const startOfDay = new Date(latestAnalysisDate.analysisDate);
-    startOfDay.setHours(0, 0, 0, 0);
-
-    const endOfDay = new Date(latestAnalysisDate.analysisDate);
-    endOfDay.setHours(23, 59, 59, 999);
-
-    return prisma.analysis.findMany({
-      where: {
-        analysisDate: {
-          gte: startOfDay,
-          lte: endOfDay,
-        },
-        ...(market && { stock: { market } }),
-        ...(recommendation && { recommendation }),
-      },
-      include: {
-        stock: {
-          select: {
-            ticker: true,
-            name: true,
-            market: true,
-            sector: true,
+    // 2. 各銘柄の最新分析を取得
+    const latestAnalyses = await Promise.all(
+      stocks.map(async (stock) => {
+        const analysis = await prisma.analysis.findFirst({
+          where: {
+            stockId: stock.id,
+            ...(recommendation && { recommendation }),
           },
-        },
-      },
-      orderBy: {
-        confidenceScore: 'desc',
-      },
-    });
+          orderBy: { analysisDate: 'desc' },
+        });
+
+        if (!analysis) return null;
+
+        return {
+          ...analysis,
+          stock: {
+            ticker: stock.ticker,
+            name: stock.name,
+            market: stock.market,
+            sector: stock.sector,
+          },
+        };
+      })
+    );
+
+    // 3. nullを除外してconfidenceScoreでソート
+    return latestAnalyses
+      .filter((a): a is NonNullable<typeof a> => a !== null)
+      .sort((a, b) => b.confidenceScore - a.confidenceScore);
   }
 
   /**
@@ -320,4 +315,5 @@ export class AnalysisService {
 
     return analysis;
   }
+
 }
