@@ -32,8 +32,7 @@ export interface Analysis {
   analysisDate: string;
   recommendation: Recommendation;
   confidenceScore: number;
-  reasonShort: string;
-  reasonDetailed: string;
+  reason: string;
   currentPrice: number | null;
   peRatio: number | null;
   pbRatio: number | null;

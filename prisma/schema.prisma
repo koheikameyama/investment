@@ -54,8 +54,7 @@ model Analysis {
   confidenceScore Int // 0-100
 
   // 推奨理由
-  reasonShort    String // 短文（100-200文字）
-  reasonDetailed String // 詳細（500-1000文字）
+  reason String // 推奨理由（300文字程度）
 
   // 分析時の株価・財務指標
   currentPrice  Float?

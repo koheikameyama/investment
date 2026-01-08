@@ -223,7 +223,7 @@ def analyze_with_openai(stock_data: StockData) -> Dict[str, Any]:
 - 企業名: {stock_data.company_name}
 - 市場: {'日本' if stock_data.market == 'JP' else '米国'}
 - セクター: {stock_data.sector}
-- 現在価格: {stock_data.current_price}円
+- 現在価格: {stock_data.current_price}{'円' if stock_data.market == 'JP' else 'ドル'}
 - PER: {stock_data.pe_ratio if stock_data.pe_ratio else 'N/A'}
 - PBR: {stock_data.pb_ratio if stock_data.pb_ratio else 'N/A'}
 - ROE: {stock_data.roe if stock_data.roe else 'N/A'}%
@@ -233,8 +233,7 @@ def analyze_with_openai(stock_data: StockData) -> Dict[str, Any]:
 {{
   "recommendation": "Buy" | "Sell" | "Hold",
   "confidence_score": 0-100の整数,
-  "reason_short": "100-200文字の簡潔な推奨理由",
-  "reason_detailed": "500-1000文字の詳細な分析と推奨理由"
+  "reason": "推奨理由を300文字程度で記述。財務指標の評価、業績動向、投資判断の根拠を含める。"
 }}
 """
 
@@ -270,8 +269,7 @@ def analyze_with_openai(stock_data: StockData) -> Dict[str, Any]:
         return {
             "recommendation": "Hold",
             "confidence_score": 0,
-            "reason_short": f"分析エラー: {error_msg}",
-            "reason_detailed": f"AI分析中にエラーが発生しました: {error_msg}"
+            "reason": f"AI分析中にエラーが発生しました: {error_msg}"
         }
 
 
@@ -306,8 +304,7 @@ def save_analysis_to_db(conn, stock_id: str, stock_data: StockData, analysis: Di
                         "analysisDate" = %s,
                         recommendation = %s,
                         "confidenceScore" = %s,
-                        "reasonShort" = %s,
-                        "reasonDetailed" = %s,
+                        reason = %s,
                         "currentPrice" = %s,
                         "peRatio" = %s,
                         "pbRatio" = %s,
@@ -319,8 +316,7 @@ def save_analysis_to_db(conn, stock_id: str, stock_data: StockData, analysis: Di
                     now,
                     analysis['recommendation'],
                     analysis['confidence_score'],
-                    analysis['reason_short'],
-                    analysis['reason_detailed'],
+                    analysis['reason'],
                     stock_data.current_price,
                     stock_data.pe_ratio,
                     stock_data.pb_ratio,
@@ -340,8 +336,7 @@ def save_analysis_to_db(conn, stock_id: str, stock_data: StockData, analysis: Di
                         "analysisDate",
                         recommendation,
                         "confidenceScore",
-                        "reasonShort",
-                        "reasonDetailed",
+                        reason,
                         "currentPrice",
                         "peRatio",
                         "pbRatio",
@@ -349,15 +344,14 @@ def save_analysis_to_db(conn, stock_id: str, stock_data: StockData, analysis: Di
                         "dividendYield",
                         "createdAt",
                         "updatedAt"
-                    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                 """, (
                     analysis_id,
                     stock_id,
                     now,
                     analysis['recommendation'],
                     analysis['confidence_score'],
-                    analysis['reason_short'],
-                    analysis['reason_detailed'],
+                    analysis['reason'],
                     stock_data.current_price,
                     stock_data.pe_ratio,
                     stock_data.pb_ratio,

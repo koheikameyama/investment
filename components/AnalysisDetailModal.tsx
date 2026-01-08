@@ -184,7 +184,7 @@ export const AnalysisDetailModal: React.FC<AnalysisDetailModalProps> = ({
                   AI Analysis
                 </h4>
                 <div className="bg-white rounded-xl p-5 border border-surface-200 shadow-sm leading-relaxed text-surface-700 whitespace-pre-wrap">
-                  {analysis.reasonDetailed}
+                  {analysis.reason}
                 </div>
               </div>
 

@@ -17,8 +17,7 @@ const openai = new OpenAI({
 export interface AIAnalysisResult {
   recommendation: 'Buy' | 'Sell' | 'Hold';
   confidence_score: number;
-  reason_short: string;
-  reason_detailed: string;
+  reason: string;
 }
 
 /**
@@ -68,8 +67,7 @@ ${priceHistoryText}
 {
   "recommendation": "Buy" | "Sell" | "Hold",
   "confidence_score": 85,
-  "reason_short": "投資初心者向けに親しみやすく、わかりやすい理由（150-200文字程度。専門用語は避け、なぜそう判断したのかを簡潔に説明）",
-  "reason_detailed": "詳細な理由（500-1000文字程度、財務指標や株価トレンドを基に具体的に説明）"
+  "reason": "推奨理由を300文字程度で記述。財務指標の評価、業績動向、投資判断の根拠を初心者にもわかりやすく説明。"
 }`;
   }
 
@@ -185,17 +183,9 @@ ${priceHistoryText}
       );
     }
 
-    // reason_short チェック
-    if (!result.reason_short || typeof result.reason_short !== 'string') {
-      throw new Error('reason_short が不正です');
-    }
-
-    // reason_detailed チェック
-    if (
-      !result.reason_detailed ||
-      typeof result.reason_detailed !== 'string'
-    ) {
-      throw new Error('reason_detailed が不正です');
+    // reason チェック
+    if (!result.reason || typeof result.reason !== 'string') {
+      throw new Error('reason が不正です');
     }
   }
 

@@ -14,7 +14,7 @@ export const AnalysisCard: React.FC<AnalysisCardProps> = ({
   analysis,
   onDetailClick,
 }) => {
-  const { stock, recommendation, confidenceScore, currentPrice, reasonShort } = analysis;
+  const { stock, recommendation, confidenceScore, currentPrice, reason } = analysis;
 
   // 推奨アクションの設定（絵文字付き）
   const getRecommendationConfig = (rec: string) => {
@@ -135,7 +135,7 @@ export const AnalysisCard: React.FC<AnalysisCardProps> = ({
         <div className="flex items-start gap-2">
           <span className="text-lg flex-shrink-0">🤖</span>
           <p className="text-surface-700 text-sm line-clamp-3 leading-relaxed">
-            {reasonShort}
+            {reason}
           </p>
         </div>
       </div>
