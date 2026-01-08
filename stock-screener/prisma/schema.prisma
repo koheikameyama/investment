@@ -1,0 +1,125 @@
+// Prismaスキーマ定義
+// AI株式分析ツールのデータモデル (SQLite版)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// 銘柄データモデル
+model Stock {
+  // 主キー - UUID
+  id     String @id @default(uuid())
+
+  // ティッカーシンボル（ユニーク制約）
+  ticker String @unique
+
+  // 基本情報
+  name   String
+  market String // 'JP' または 'US'
+  sector String?
+
+  // タイムスタンプ
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // リレーション
+  analyses     Analysis[]
+  priceHistory PriceHistory[]
+
+  // インデックス
+  @@index([market])
+  @@index([sector])
+  @@map("stocks")
+}
+
+// AI分析結果モデル
+model Analysis {
+  // 主キー
+  id String @id @default(uuid())
+
+  // 外部キー - Stock
+  stockId String
+  stock   Stock  @relation(fields: [stockId], references: [id], onDelete: Cascade)
+
+  // 分析日時
+  analysisDate DateTime @default(now())
+
+  // AI推奨
+  recommendation  String // 'Buy', 'Sell', 'Hold'
+  confidenceScore Int // 0-100
+
+  // 推奨理由
+  reasonShort    String // 短文（100-200文字）
+  reasonDetailed String // 詳細（500-1000文字）
+
+  // 分析時の株価・財務指標
+  currentPrice  Float?
+  peRatio       Float?
+  pbRatio       Float?
+  roe           Float?
+  dividendYield Float?
+
+  // タイムスタンプ
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // インデックス
+  @@index([stockId, analysisDate])
+  @@index([analysisDate])
+  @@index([recommendation])
+  @@map("analyses")
+}
+
+// 株価履歴モデル
+model PriceHistory {
+  // 主キー
+  id String @id @default(uuid())
+
+  // 外部キー - Stock
+  stockId String
+  stock   Stock  @relation(fields: [stockId], references: [id], onDelete: Cascade)
+
+  // 日付と株価データ
+  date   DateTime
+  open   Float
+  high   Float
+  low    Float
+  close  Float
+  volume Int
+
+  // タイムスタンプ
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // ユニーク制約とインデックス
+  @@unique([stockId, date])
+  @@index([stockId, date])
+  @@map("price_history")
+}
+
+// バッチジョブログモデル
+model BatchJobLog {
+  // 主キー
+  id String @id @default(uuid())
+
+  // ジョブ情報
+  jobDate      DateTime
+  status       String // 'success', 'partial_success', 'failure'
+  totalStocks  Int
+  successCount Int
+  failureCount Int
+  errorMessage String?
+  duration     Int // ミリ秒
+
+  // タイムスタンプ
+  createdAt DateTime @default(now())
+
+  // インデックス
+  @@index([jobDate])
+  @@map("batch_job_logs")
+}

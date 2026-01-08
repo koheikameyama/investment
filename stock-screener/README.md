@@ -1,151 +1,181 @@
 # 銘柄スクリーニングツール
 
-日本株・米国株を対象とした銘柄スクリーニングツール。複数の財務指標で銘柄を効率的にフィルタリングできます。
+AIによる日本株・米国株の投資分析ツール。シンプルで使いやすい、個人投資家向けのアプリケーションです。
 
-## 特徴
+## ✨ 特徴
 
-- 📊 **複数の財務指標でフィルタリング**: 時価総額、PER、PBR、ROE、配当利回り、株価など
-- 🌏 **日本株・米国株に対応**: タブで簡単に市場を切り替え
-- 🔄 **Yahoo Finance APIと連携**: リアルタイムの銘柄データを取得
-- 📱 **レスポンシブデザイン**: デスクトップ、タブレット、モバイルに対応
-- ⚡ **高速検索**: データベースキャッシングとインデックス最適化
+- 🤖 **AI分析**: OpenAI GPTによる銘柄分析
+- 📊 **リアルタイムデータ**: Yahoo Finance APIと連携
+- 🌏 **日本株・米国株対応**: ワンクリックで市場切り替え
+- 📱 **レスポンシブデザイン**: どのデバイスでも快適に使用可能
+- ⚡ **シンプル構成**: Next.js統合で1コマンドで起動
 
-## 技術スタック
+## 🛠 技術スタック
 
-### バックエンド
-- **言語**: TypeScript
-- **フレームワーク**: Express.js
-- **データベース**: PostgreSQL
-- **ORM**: Prisma
-- **外部API**: yahoo-finance2
+**フルスタック**
+- Next.js 15 (App Router)
+- React 19
+- TypeScript
+- Tailwind CSS v4
 
-### フロントエンド
-- **言語**: TypeScript
-- **フレームワーク**: React
-- **ビルドツール**: Vite
-- **スタイリング**: Tailwind CSS
-- **HTTP通信**: Axios
+**データベース**
+- SQLite (ローカルファイル)
+- Prisma ORM
 
-## セットアップ
+**外部API**
+- Yahoo Finance (株価データ)
+- OpenAI GPT (AI分析)
+
+**その他**
+- TanStack Query (データフェッチング)
+- Python (バッチ処理)
+
+## 🚀 セットアップ
 
 ### 前提条件
 
 - Node.js 18以上
-- PostgreSQL 14以上
+- Python 3.9以上 (バッチ分析用)
 - npm または yarn
 
-### バックエンドのセットアップ
+### インストール
 
 ```bash
-cd backend
+# 依存関係のインストール
 npm install
+
+# データベースのセットアップ
+npx prisma db push
+
+# 環境変数の設定
 cp .env.example .env
-# .envファイルを編集してデータベース接続情報を設定
-npm run prisma:generate
-npm run prisma:migrate
-npx tsx src/scripts/refresh-data.ts
+# .envファイルを編集してOpenAI APIキーを設定（オプション）
+```
+
+### 起動
+
+```bash
+# 開発サーバーを起動
 npm run dev
 ```
 
-### フロントエンドのセットアップ
+ブラウザで `http://localhost:3000` にアクセス
 
-```bash
-cd frontend
-npm install
-cp .env.example .env
-npm run dev
-```
+## 📖 使い方
 
-## 使い方
-
-1. ブラウザで `http://localhost:5173` にアクセス
+1. ブラウザでアプリケーションを開く
 2. 日本株/米国株のタブを選択
-3. フィルタ条件を入力（任意）
-4. 「検索」ボタンをクリック
-5. 検索結果をソート・ページネーションで閲覧
+3. 推奨フィルター（Buy/Sell/Hold）を選択
+4. AI分析結果を確認
+5. カードをクリックして詳細を表示
 
-## APIドキュメント
-
-詳細なAPIドキュメントは `/backend/README.md` を参照してください。
-
-### 主要エンドポイント
-
-- `GET /api/v1/stocks/screen` - 銘柄スクリーニング
-- `GET /api/v1/sectors` - セクターリスト取得
-- `POST /api/v1/stocks/refresh` - データ更新
-- `GET /api/v1/health` - ヘルスチェック
-
-## データ更新
-
-Yahoo Finance APIから銘柄データを取得・更新するには:
+## 🔧 その他のコマンド
 
 ```bash
-cd backend
-npx tsx src/scripts/refresh-data.ts
-```
+# データベース管理画面を開く
+npm run db:studio
 
-または、ブラウザ上で「データ更新」ボタンをクリックしてください。
+# Prisma Clientを再生成
+npm run db:generate
 
-## 開発
+# バッチ分析を実行（Python）
+npm run batch:analysis
 
-### バックエンド開発サーバー
-
-```bash
-cd backend
-npm run dev
-```
-
-### フロントエンド開発サーバー
-
-```bash
-cd frontend
-npm run dev
-```
-
-### データベース管理
-
-Prisma Studioを使用してデータベースを視覚的に管理できます:
-
-```bash
-cd backend
-npm run prisma:studio
-```
-
-## 本番環境へのデプロイ
-
-### バックエンド
-
-```bash
-cd backend
+# 本番ビルド
 npm run build
+
+# 本番環境で起動
 npm start
 ```
 
-### フロントエンド
+## 📁 プロジェクト構造
 
-```bash
-cd frontend
-npm run build
+```
+stock-screener/
+├── app/                    # Next.js App Router
+│   ├── api/               # APIエンドポイント
+│   │   ├── analyses/     # 分析API
+│   │   └── batch-jobs/   # バッチジョブAPI
+│   ├── globals.css       # グローバルスタイル
+│   ├── layout.tsx        # ルートレイアウト
+│   ├── page.tsx          # ホームページ
+│   └── providers.tsx     # React Queryプロバイダー
+├── components/            # Reactコンポーネント
+├── hooks/                # カスタムフック
+├── lib/                  # ユーティリティ・サービス層
+│   ├── analysis.service.ts
+│   ├── batch.service.ts
+│   ├── prisma.ts         # Prismaシングルトン
+│   └── ...
+├── types/                # TypeScript型定義
+├── prisma/               # Prismaスキーマ
+│   └── schema.prisma
+├── scripts/              # バッチスクリプト
+│   └── batch_analysis.py
+├── dev.db                # SQLiteデータベース
+└── package.json
 ```
 
-ビルドされたファイルは `frontend/dist` に出力されます。
+## 🗄 データベース
 
-## 免責事項
+SQLiteを使用しているため、PostgreSQLのセットアップは不要です。
 
-⚠️ **重要**: 本ツールは投資助言ではありません。投資判断は自己責任で行ってください。
+- ファイル: `dev.db`
+- 管理: `npm run db:studio`
+- マイグレーション: `npx prisma db push`
+
+## 🐍 バッチ分析
+
+バッチ分析を実行するには、Pythonの依存関係をインストールします：
+
+```bash
+# Pythonの仮想環境を作成（オプション）
+python3 -m venv venv
+source venv/bin/activate  # Windowsの場合: venv\Scripts\activate
+
+# Python依存関係のインストール
+pip install yfinance psycopg2-binary python-dotenv
+
+# バッチ分析の実行
+npm run batch:analysis
+```
+
+## 🌐 デプロイ
+
+### Vercel（推奨）
+
+```bash
+# Vercelにデプロイ
+npx vercel
+
+# 環境変数を設定
+# - DATABASE_URL (本番用のデータベース)
+# - OPENAI_API_KEY
+```
+
+### その他のプラットフォーム
+
+```bash
+# ビルド
+npm run build
+
+# 起動
+npm start
+```
+
+## ⚠️ 免責事項
+
+本ツールは投資助言ではありません。投資判断は自己責任で行ってください。
 
 - データソース: Yahoo Finance API
+- AI分析: OpenAI GPT
 - 提供されるデータの精度には限界があります
 - 重要な投資判断を行う際は、複数の情報源を参照してください
 
-## ライセンス
+## 📝 ライセンス
 
 MIT
 
-## 貢献
+## 🤝 貢献
 
 プルリクエストを歓迎します。大きな変更を加える場合は、まずissueを開いて変更内容を議論してください。
-
-## サポート
-
-問題が発生した場合は、GitHubのissueを作成してください。
