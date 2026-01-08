@@ -1,0 +1,47 @@
+// Prismaスキーマ定義
+// 銘柄スクリーニングツールのデータモデル
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// 銘柄データモデル
+model Stock {
+  // 主キー - ティッカーシンボル
+  ticker String @id @db.VarChar(20)
+
+  // 基本情報
+  name   String @db.VarChar(200)
+  market String @db.VarChar(2) // 'JP' または 'US'
+  sector String? @db.VarChar(100)
+
+  // 財務指標
+  marketCap      BigInt? // 時価総額
+  per            Decimal? @db.Decimal(10, 2) // 株価収益率
+  pbr            Decimal? @db.Decimal(10, 2) // 株価純資産倍率
+  roe            Decimal? @db.Decimal(10, 2) // 自己資本利益率（%）
+  dividendYield  Decimal? @db.Decimal(10, 2) // 配当利回り（%）
+  price          Decimal? @db.Decimal(20, 4) // 現在株価
+
+  // メタデータ
+  currency    String   @db.VarChar(3) // 'JPY' または 'USD'
+  lastUpdated DateTime @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // インデックス
+  @@index([market])
+  @@index([sector])
+  @@index([marketCap])
+  @@index([per])
+  @@index([pbr])
+  @@index([roe])
+  @@index([dividendYield])
+  @@index([price])
+  @@map("stocks")
+}
