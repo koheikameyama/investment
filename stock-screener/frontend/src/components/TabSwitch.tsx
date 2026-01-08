@@ -15,25 +15,33 @@ interface TabSwitchProps {
  * タブ切り替えコンポーネント
  */
 export const TabSwitch: React.FC<TabSwitchProps> = ({ activeTab, onTabChange }) => {
-  const tabs: { value: Market; label: string }[] = [
-    { value: 'JP', label: '日本株' },
-    { value: 'US', label: '米国株' },
+  const tabs: { value: Market; label: string; flag: string; color: string }[] = [
+    { value: 'JP', label: '日本株', flag: '🇯🇵', color: 'from-red-500 to-pink-600' },
+    { value: 'US', label: '米国株', flag: '🇺🇸', color: 'from-blue-500 to-indigo-600' },
   ];
 
   return (
-    <div className="flex border-b border-gray-200">
+    <div className="relative flex p-2 gap-2">
+      <div className="absolute inset-2 bg-gradient-to-r from-blue-100 to-indigo-100 rounded-xl opacity-30"></div>
       {tabs.map((tab) => (
         <button
           key={tab.value}
           onClick={() => onTabChange(tab.value)}
-          className={`px-6 py-3 font-medium text-sm transition-colors ${
-            activeTab === tab.value
-              ? 'border-b-2 border-blue-600 text-blue-600'
-              : 'text-gray-600 hover:text-gray-800 hover:border-b-2 hover:border-gray-300'
-          }`}
+          className={`
+            relative flex-1 flex items-center justify-center space-x-2 px-8 py-4 rounded-xl
+            font-semibold text-base transition-all duration-300 transform
+            ${activeTab === tab.value
+              ? `bg-gradient-to-r ${tab.color} text-white shadow-xl scale-105`
+              : 'bg-white/50 text-gray-600 hover:bg-white/80 hover:text-gray-900 hover:scale-102'
+            }
+          `}
           type="button"
         >
-          {tab.label}
+          <span className="text-2xl">{tab.flag}</span>
+          <span>{tab.label}</span>
+          {activeTab === tab.value && (
+            <div className="absolute inset-0 rounded-xl bg-white/20 animate-pulse"></div>
+          )}
         </button>
       ))}
     </div>
