@@ -386,9 +386,13 @@ def save_price_history_to_db(conn, stock_id: str, stock_data: StockData) -> bool
     try:
         with conn.cursor() as cur:
             for price_data in stock_data.price_history:
+                # UUIDを生成
+                price_id = str(uuid.uuid4())
+
                 # 既存データがあれば更新、なければ挿入
                 cur.execute("""
                     INSERT INTO price_history (
+                        id,
                         "stockId",
                         date,
                         open,
@@ -398,7 +402,7 @@ def save_price_history_to_db(conn, stock_id: str, stock_data: StockData) -> bool
                         volume,
                         "createdAt",
                         "updatedAt"
-                    ) VALUES (%s, %s, %s, %s, %s, %s, %s, NOW(), NOW())
+                    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, NOW(), NOW())
                     ON CONFLICT ("stockId", date) DO UPDATE SET
                         open = EXCLUDED.open,
                         high = EXCLUDED.high,
@@ -407,6 +411,7 @@ def save_price_history_to_db(conn, stock_id: str, stock_data: StockData) -> bool
                         volume = EXCLUDED.volume,
                         "updatedAt" = NOW()
                 """, (
+                    price_id,
                     stock_id,
                     price_data['date'],
                     price_data['open'],
