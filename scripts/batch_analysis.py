@@ -166,8 +166,6 @@ def fetch_stock_data(ticker: str, market: str) -> StockData:
         else:
             yahoo_ticker = ticker
 
-        print(f"  📊 {yahoo_ticker} のデータ取得中...")
-
         # yfinanceでデータ取得
         stock = yf.Ticker(yahoo_ticker)
         info = stock.info
@@ -201,9 +199,7 @@ def fetch_stock_data(ticker: str, market: str) -> StockData:
                         'volume': int(row['Volume'])
                     })
         except Exception as e:
-            print(f"  ⚠️ 株価履歴の取得に失敗: {e}")
-
-        print(f"  ✅ {ticker} のデータ取得完了（株価履歴: {len(stock_data.price_history)}件）")
+            pass  # 株価履歴取得失敗は警告のみ
 
         # レート制限対策: リクエスト間に1秒待機
         time.sleep(1)
@@ -212,26 +208,23 @@ def fetch_stock_data(ticker: str, market: str) -> StockData:
 
     except Exception as e:
         error_msg = str(e)
-        print(f"  ❌ {ticker} のデータ取得失敗: {error_msg}")
         stock_data.error = error_msg
         return stock_data
 
 
-def analyze_with_openai(stock_data: StockData) -> Dict[str, Any]:
+def analyze_with_openai(stock_data: StockData, max_retries: int = 2) -> Dict[str, Any]:
     """
-    OpenAI APIで株式分析を実行
+    OpenAI APIで株式分析を実行（リトライあり）
 
     Args:
         stock_data: 株式データ
+        max_retries: 最大リトライ回数（デフォルト: 2回）
 
     Returns:
         Dict: AI分析結果
     """
-    try:
-        print(f"  🤖 {stock_data.ticker} のAI分析実行中...")
-
-        # プロンプト作成
-        prompt = f"""
+    # プロンプト作成
+    prompt = f"""
 あなたは初心者投資家向けのAI投資アドバイザーです。
 以下の銘柄データを分析し、投資推奨を提供してください。
 
@@ -254,40 +247,47 @@ def analyze_with_openai(stock_data: StockData) -> Dict[str, Any]:
 }}
 """
 
-        # OpenAI APIリクエスト
-        response = client.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=[
-                {"role": "system", "content": "あなたは初心者投資家向けのAI投資アドバイザーです。JSON形式で回答してください。"},
-                {"role": "user", "content": prompt}
-            ],
-            response_format={"type": "json_object"},
-            timeout=30
-        )
-
-        # 使用量を追跡
-        if response.usage:
-            usage_tracker.add_usage(
-                response.usage.prompt_tokens,
-                response.usage.completion_tokens
+    # リトライロジック
+    for attempt in range(max_retries + 1):  # 初回 + リトライ2回 = 最大3回
+        try:
+            # OpenAI APIリクエスト
+            response = client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[
+                    {"role": "system", "content": "あなたは初心者投資家向けのAI投資アドバイザーです。JSON形式で回答してください。"},
+                    {"role": "user", "content": prompt}
+                ],
+                response_format={"type": "json_object"},
+                timeout=30
             )
 
-        # レスポンス解析
-        content = response.choices[0].message.content
-        result = json.loads(content)
+            # 使用量を追跡
+            if response.usage:
+                usage_tracker.add_usage(
+                    response.usage.prompt_tokens,
+                    response.usage.completion_tokens
+                )
 
-        print(f"  ✅ {stock_data.ticker} のAI分析完了: {result['recommendation']} (tokens: {response.usage.prompt_tokens + response.usage.completion_tokens})")
+            # レスポンス解析
+            content = response.choices[0].message.content
+            result = json.loads(content)
 
-        return result
+            return result
 
-    except Exception as e:
-        error_msg = str(e)
-        print(f"  ❌ {stock_data.ticker} のAI分析失敗: {error_msg}")
-        return {
-            "recommendation": "Hold",
-            "confidence_score": 0,
-            "reason": f"AI分析中にエラーが発生しました: {error_msg}"
-        }
+        except Exception as e:
+            error_msg = str(e)
+
+            # 最後の試行でもエラーの場合
+            if attempt == max_retries:
+                return {
+                    "recommendation": "Hold",
+                    "confidence_score": 0,
+                    "reason": f"AI分析中にエラーが発生しました: {error_msg}"
+                }
+
+            # リトライ前に遅延（エクスポネンシャルバックオフ: 1秒、2秒）
+            delay = 2 ** attempt  # 1秒、2秒
+            time.sleep(delay)
 
 
 def save_analysis_to_db(conn, stock_id: str, stock_data: StockData, analysis: Dict[str, Any]) -> bool:
@@ -342,7 +342,6 @@ def save_analysis_to_db(conn, stock_id: str, stock_data: StockData, analysis: Di
                     now,
                     existing[0]  # タプルなのでインデックスでアクセス
                 ))
-                print(f"  🔄 {stock_data.ticker} の分析結果を更新しました")
             else:
                 # 新規作成
                 analysis_id = str(uuid.uuid4())
@@ -377,14 +376,12 @@ def save_analysis_to_db(conn, stock_id: str, stock_data: StockData, analysis: Di
                     now,
                     now
                 ))
-                print(f"  💾 {stock_data.ticker} の分析結果を新規保存しました")
 
         conn.commit()
         return True
 
     except Exception as e:
         conn.rollback()
-        print(f"  ❌ {stock_data.ticker} の保存失敗: {e}")
         return False
 
 
@@ -439,12 +436,10 @@ def save_price_history_to_db(conn, stock_id: str, stock_data: StockData) -> bool
                 ))
 
         conn.commit()
-        print(f"  📈 {stock_data.ticker} の株価履歴を保存しました（{len(stock_data.price_history)}件）")
         return True
 
     except Exception as e:
         conn.rollback()
-        print(f"  ❌ {stock_data.ticker} の株価履歴保存失敗: {e}")
         return False
 
 
@@ -460,20 +455,21 @@ def process_single_stock(stock: Dict[str, Any], queue: StockQueue) -> bool:
         bool: 処理が成功したかどうか
     """
     conn = None
+    ticker = stock['ticker']
+
     try:
         # データベース接続（スレッドごとに接続を作成）
         conn = psycopg2.connect(DATABASE_URL)
 
         with print_lock:
-            print(f"\n{queue.get_progress()} {stock['ticker']} ({stock['market']}) の分析開始")
-            print("-" * 50)
+            print(f"🔄 {ticker}: 処理開始...")
 
         # 株価データ取得
-        stock_data = fetch_stock_data(stock['ticker'], stock['market'])
+        stock_data = fetch_stock_data(ticker, stock['market'])
 
         if stock_data.error or stock_data.current_price == 0:
             with print_lock:
-                print(f"  ⚠️ {stock['ticker']}: データ取得失敗のためスキップ")
+                print(f"⚠️  {ticker}: データ取得失敗")
             queue.mark_failure()
             return False
 
@@ -484,15 +480,19 @@ def process_single_stock(stock: Dict[str, Any], queue: StockQueue) -> bool:
         if save_analysis_to_db(conn, stock['id'], stock_data, analysis):
             # 株価履歴も保存
             save_price_history_to_db(conn, stock['id'], stock_data)
+            with print_lock:
+                print(f"✅ {ticker}: {analysis['recommendation']} ({analysis['confidence_score']}%) 完了")
             queue.mark_success()
             return True
         else:
+            with print_lock:
+                print(f"❌ {ticker}: DB保存失敗")
             queue.mark_failure()
             return False
 
     except Exception as e:
         with print_lock:
-            print(f"  ❌ {stock['ticker']}: 処理中にエラー発生: {e}")
+            print(f"❌ {ticker}: エラー - {str(e)[:50]}")
         queue.mark_failure()
         return False
     finally:
