@@ -461,6 +461,24 @@ def process_single_stock(stock: Dict[str, Any], queue: StockQueue) -> bool:
         # データベース接続（スレッドごとに接続を作成）
         conn = psycopg2.connect(DATABASE_URL)
 
+        # 今日の日付を取得（日付のみ、時刻は00:00:00）
+        today = datetime.now().date()
+
+        # 今日の分析データが既に存在するかチェック
+        with conn.cursor() as cur:
+            cur.execute("""
+                SELECT id FROM analyses
+                WHERE "stockId" = %s
+                AND DATE("analysisDate") = %s
+            """, (stock['id'], today))
+            existing_today = cur.fetchone()
+
+        if existing_today:
+            with print_lock:
+                print(f"⏭️  {ticker}: 本日分の分析済み（スキップ）")
+            queue.mark_success()
+            return True
+
         with print_lock:
             print(f"🔄 {ticker}: 処理開始...")
 
