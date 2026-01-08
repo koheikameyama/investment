@@ -3,7 +3,7 @@
  */
 
 import { useQuery } from '@tanstack/react-query';
-import { AnalysisApiService } from '../services/analysisApi';
+import { AnalysisApiService } from '../lib/analysisApi';
 import type { Market, Recommendation } from '../types/analysis';
 
 /**

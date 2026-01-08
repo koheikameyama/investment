@@ -6,12 +6,6 @@
 import yahooFinance from 'yahoo-finance2';
 import { Prisma } from '@prisma/client';
 
-yahooFinance.setGlobalConfig({
-  queue: {
-    timeout: 30000 // 30秒のタイムアウト
-  }
-});
-
 /**
  * 銘柄情報の型定義
  */

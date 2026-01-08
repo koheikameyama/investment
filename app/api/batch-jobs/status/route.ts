@@ -6,6 +6,9 @@
 import { NextResponse } from 'next/server';
 import { BatchService } from '@/lib/batch.service';
 
+// SQLiteを使用するためNode.jsランタイムを指定
+export const runtime = 'nodejs';
+
 export async function GET() {
   try {
     const lastJob = await BatchService.getLatestBatchJobLog();

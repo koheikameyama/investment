@@ -6,6 +6,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { AnalysisService } from '@/lib/analysis.service';
 
+// SQLiteを使用するためNode.jsランタイムを指定
+export const runtime = 'nodejs';
+
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
