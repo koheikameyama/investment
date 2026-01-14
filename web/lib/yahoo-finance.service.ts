@@ -106,7 +106,7 @@ export class YahooFinanceService {
         period1: startDate,
         period2: endDate,
         interval: '1d', // 日次データ
-      });
+      }) as any[];
 
       // データを整形
       const priceHistory: PriceHistoryData[] = history.map((item) => ({
