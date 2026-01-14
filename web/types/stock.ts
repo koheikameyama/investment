@@ -3,9 +3,9 @@
  */
 
 /**
- * 市場タイプ
+ * 市場タイプ（日本株のみ）
  */
-export type Market = 'JP' | 'US';
+export type Market = 'JP';
 
 /**
  * ソート順

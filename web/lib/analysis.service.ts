@@ -24,15 +24,13 @@ export interface AnalysisResult {
  */
 export class AnalysisService {
   /**
-   * 単一銘柄の分析を実行
+   * 単一銘柄の分析を実行（日本株のみ）
    * データ取得 → AI分析 → 結果保存のフロー
    * @param ticker ティッカーシンボル
-   * @param market 市場（JP/US）
    * @returns 分析結果
    */
   static async analyzeSingleStock(
-    ticker: string,
-    market: 'JP' | 'US'
+    ticker: string
   ): Promise<AnalysisResult> {
     try {
       console.log(`🔍 ${ticker} の分析を開始...`);
@@ -44,15 +42,12 @@ export class AnalysisService {
         create: {
           ticker,
           name: ticker, // 仮の名前、後で更新
-          market,
+          market: 'JP',
         },
       });
 
       // 2. Yahoo Finance APIからデータ取得
-      const data = await YahooFinanceService.fetchStockWithHistory(
-        ticker,
-        market
-      );
+      const data = await YahooFinanceService.fetchStockWithHistory(ticker);
 
       if (!data || !data.stockInfo) {
         throw new Error('株価データの取得に失敗しました');
@@ -160,27 +155,25 @@ export class AnalysisService {
   }
 
   /**
-   * 複数銘柄の分析を実行
+   * 複数銘柄の分析を実行（日本株のみ）
    * @param tickers ティッカーシンボルの配列
-   * @param market 市場（JP/US）
    * @param concurrency 同時実行数（デフォルト: 1）
    * @returns 分析結果の配列
    */
   static async analyzeMultipleStocks(
     tickers: string[],
-    market: 'JP' | 'US',
     concurrency: number = 1
   ): Promise<AnalysisResult[]> {
     const results: AnalysisResult[] = [];
 
     console.log(
-      `📊 ${market}市場の${tickers.length}銘柄の分析を開始（同時実行数: ${concurrency}）...`
+      `📊 日本株${tickers.length}銘柄の分析を開始（同時実行数: ${concurrency}）...`
     );
 
     // 順次処理（OpenAI APIのレート制限を考慮）
     for (let i = 0; i < tickers.length; i++) {
       const ticker = tickers[i];
-      const result = await this.analyzeSingleStock(ticker, market);
+      const result = await this.analyzeSingleStock(ticker);
       results.push(result);
 
       // 進捗表示
@@ -208,18 +201,16 @@ export class AnalysisService {
   }
 
   /**
-   * 最新の分析結果を取得（各銘柄につき最新1件のみ）
-   * @param market 市場（JP/US、オプション）
+   * 最新の分析結果を取得（各銘柄につき最新1件のみ・日本株のみ）
    * @param recommendation 推奨フィルター（Buy/Sell/Hold、オプション）
    * @returns 分析結果の配列
    */
   static async getLatestAnalyses(
-    market?: 'JP' | 'US',
     recommendation?: 'Buy' | 'Sell' | 'Hold'
   ) {
-    // 1. 対象銘柄を取得
+    // 1. 対象銘柄を取得（日本株のみ）
     const stocks = await prisma.stock.findMany({
-      where: market ? { market } : undefined,
+      where: { market: 'JP' },
       select: { id: true, ticker: true, name: true, market: true, sector: true },
     });
 
@@ -255,12 +246,11 @@ export class AnalysisService {
   }
 
   /**
-   * 指定日付の分析結果を取得
+   * 指定日付の分析結果を取得（日本株のみ）
    * @param date 日付（YYYY-MM-DD形式）
-   * @param market 市場（JP/US、オプション）
    * @returns 分析結果の配列
    */
-  static async getAnalysesByDate(date: string, market?: 'JP' | 'US') {
+  static async getAnalysesByDate(date: string) {
     const targetDate = new Date(date);
     const startOfDay = new Date(targetDate);
     startOfDay.setHours(0, 0, 0, 0);
@@ -274,7 +264,7 @@ export class AnalysisService {
           gte: startOfDay,
           lte: endOfDay,
         },
-        ...(market && { stock: { market } }),
+        stock: { market: 'JP' },
       },
       include: {
         stock: {

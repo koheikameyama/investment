@@ -8,7 +8,6 @@ import type {
   Analysis,
   AnalysisDetail,
   BatchJobLog,
-  Market,
   Recommendation,
   ApiResponse,
   LatestAnalysesResponse,
@@ -35,18 +34,15 @@ const apiClient = axios.create({
  */
 export class AnalysisApiService {
   /**
-   * 最新の分析結果を取得
-   * @param market 市場フィルター（JP/US、オプション）
+   * 最新の分析結果を取得（日本株のみ）
    * @param recommendation 推奨フィルター（Buy/Sell/Hold、オプション）
    * @returns 最新の分析結果
    */
   static async getLatestAnalyses(
-    market?: Market,
     recommendation?: Recommendation
   ): Promise<LatestAnalysesResponse> {
     try {
       const params = new URLSearchParams();
-      if (market) params.append('market', market);
       if (recommendation) params.append('recommendation', recommendation);
 
       const response = await apiClient.get<
@@ -67,19 +63,16 @@ export class AnalysisApiService {
   }
 
   /**
-   * 指定日付の分析結果を取得
+   * 指定日付の分析結果を取得（日本株のみ）
    * @param date 日付（YYYY-MM-DD形式）
-   * @param market 市場フィルター（JP/US、オプション）
    * @returns 指定日付の分析結果
    */
   static async getHistoryAnalyses(
-    date: string,
-    market?: Market
+    date: string
   ): Promise<HistoryAnalysesResponse> {
     try {
       const params = new URLSearchParams();
       params.append('date', date);
-      if (market) params.append('market', market);
 
       const response = await apiClient.get<
         ApiResponse<HistoryAnalysesResponse>

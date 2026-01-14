@@ -6,20 +6,18 @@
 
 import { useState } from 'react';
 import { Layout } from '@/components/Layout';
-import { TabSwitch } from '@/components/TabSwitch';
 import { FilterBar } from '@/components/FilterBar';
 import { AnalysisTable } from '@/components/AnalysisTable';
 import { AnalysisDetailModal } from '@/components/AnalysisDetailModal';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
 import { useLatestAnalyses, useBatchJobStatus } from '@/hooks/useAnalyses';
-import type { Market, Recommendation } from '@/types/analysis';
+import type { Recommendation } from '@/types/analysis';
 
 /**
  * ホームページ
  */
 export default function Home() {
   // 状態管理
-  const [market, setMarket] = useState<Market>('JP');
   const [selectedRecommendation, setSelectedRecommendation] = useState<
     Recommendation | 'All'
   >('All');
@@ -33,18 +31,10 @@ export default function Home() {
     isLoading: isLoadingAnalyses,
     error: analysesError,
   } = useLatestAnalyses(
-    market,
     selectedRecommendation === 'All' ? undefined : selectedRecommendation
   );
 
   const { data: batchJobStatus } = useBatchJobStatus();
-
-  /**
-   * 市場切り替え
-   */
-  const handleMarketChange = (newMarket: Market) => {
-    setMarket(newMarket);
-  };
 
   /**
    * 推奨フィルター切り替え
@@ -79,15 +69,13 @@ export default function Home() {
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
             <h1 className="text-3xl font-bold text-surface-900">
-              💹 {market === 'JP' ? '日本株' : '米国株'}のAI分析
+              💹 日本株のAI分析
             </h1>
             <p className="text-surface-500 mt-1">
               AIが分析した、おすすめの投資アイデアをチェックしましょう
             </p>
             <p className="text-xs text-surface-400 mt-2">
-              {market === 'JP'
-                ? '日経225採用の時価総額上位・主要セクター代表15銘柄を分析'
-                : 'S&P500採用の時価総額上位・主要セクター代表15銘柄を分析'}
+              日経225採用の時価総額上位・主要セクター代表15銘柄を分析
             </p>
           </div>
 
@@ -109,8 +97,7 @@ export default function Home() {
         </div>
 
         {/* Controls */}
-        <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center bg-white p-4 rounded-xl border border-surface-200 shadow-sm">
-          <TabSwitch activeTab={market} onTabChange={handleMarketChange} />
+        <div className="flex flex-col sm:flex-row gap-4 justify-end items-start sm:items-center bg-white p-4 rounded-xl border border-surface-200 shadow-sm">
           <FilterBar
             selectedRecommendation={selectedRecommendation}
             onRecommendationChange={handleRecommendationChange}

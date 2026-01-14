@@ -2,8 +2,8 @@
  * AI株式分析の型定義
  */
 
-// 市場
-export type Market = 'JP' | 'US';
+// 市場（日本株のみ）
+export type Market = 'JP';
 
 // 推奨アクション
 export type Recommendation = 'Buy' | 'Sell' | 'Hold';
