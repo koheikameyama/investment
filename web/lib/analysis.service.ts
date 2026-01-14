@@ -225,7 +225,7 @@ export class AnalysisService {
 
     // 2. 各銘柄の最新分析を取得
     const latestAnalyses = await Promise.all(
-      stocks.map(async (stock) => {
+      stocks.map(async (stock: any) => {
         const analysis = await prisma.analysis.findFirst({
           where: {
             stockId: stock.id,
