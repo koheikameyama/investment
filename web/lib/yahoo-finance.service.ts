@@ -51,7 +51,7 @@ export class YahooFinanceService {
       const symbol = market === 'JP' ? `${ticker}.T` : ticker;
 
       // 株価情報を取得
-      const quote = await yahooFinance.quote(symbol);
+      const quote = await yahooFinance.quote(symbol) as any;
 
       if (!quote) {
         console.warn(`銘柄データが見つかりません: ${ticker}`);
