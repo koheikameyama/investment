@@ -1,8 +1,99 @@
 # 本番環境デプロイ手順
 
-## GitHub Actions による無料自動実行
+## 📦 Webアプリケーション（Vercel）
 
-このプロジェクトでは、GitHub Actionsを使用して毎日自動で株式分析を実行します。**完全無料**で動作します。
+### Vercel CLIを使用したデプロイ
+
+#### 1. Vercel CLIのインストール
+
+```bash
+npm install -g vercel
+```
+
+#### 2. Vercelへのログイン
+
+```bash
+vercel login
+```
+
+ブラウザが開き、認証画面が表示されます。
+
+#### 3. プロジェクトのリンク（初回のみ）
+
+```bash
+cd /path/to/stock-analyzer
+vercel link
+```
+
+以下の質問に答えます：
+- **Set up and deploy?** → `yes`
+- **Which scope?** → あなたのアカウントを選択
+- **Link to existing project?** → `no`（新規プロジェクトの場合）
+- **What's your project's name?** → `stock-analyzer`
+- **In which directory is your code located?** → `./`
+
+#### 4. 環境変数の設定
+
+```bash
+# DATABASE_URLを設定
+vercel env add DATABASE_URL
+
+# OPENAI_API_KEYを設定
+vercel env add OPENAI_API_KEY
+
+# NEXT_PUBLIC_API_URLを設定（本番環境）
+vercel env add NEXT_PUBLIC_API_URL
+```
+
+各コマンドで以下を選択：
+- **Which Environments?** → `Production`, `Preview`, `Development` をすべて選択
+- **Value?** → 実際の値を入力
+
+**DATABASE_URL** の例（Supabase Pooler）:
+```
+postgresql://postgres.[PROJECT-ID]:[PASSWORD]@aws-1-ap-northeast-1.pooler.supabase.com:6543/postgres?pgbouncer=true&connection_limit=1
+```
+
+⚠️ **注意**: パスワードの特殊文字は必ずURLエンコード
+- `$` → `%24`
+- `+` → `%2B`
+- `@` → `%40`
+
+#### 5. デプロイ
+
+**プレビューデプロイ**（開発用）:
+```bash
+vercel
+```
+
+**本番デプロイ**:
+```bash
+vercel --prod
+```
+
+#### 6. ローカルでVercel環境をテスト
+
+```bash
+vercel dev
+```
+
+Vercelの環境変数を使ってローカルでテストできます。
+
+### CI/CD（自動デプロイ）
+
+GitHubリポジトリと連携すると、自動デプロイが可能：
+
+1. Vercel Dashboardでプロジェクトを開く
+2. Settings → Git → Connect Git Repository
+3. GitHubリポジトリを選択
+4. `main`ブランチへのプッシュで自動的に本番デプロイ
+5. PRブランチへのプッシュでプレビューデプロイ
+
+---
+
+## 🤖 バッチ処理（GitHub Actions）
+
+GitHub Actionsを使用して毎日自動で株式分析を実行します。**完全無料**で動作します。
 
 ## 必要な準備
 

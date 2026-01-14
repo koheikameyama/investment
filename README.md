@@ -96,6 +96,15 @@ npm run start        # 本番サーバー起動
 npm run lint         # ESLint実行
 ```
 
+### Vercelデプロイ
+
+```bash
+npm run vercel:deploy       # プレビューデプロイ
+npm run vercel:deploy:prod  # 本番デプロイ
+npm run vercel:dev          # Vercel環境でローカル開発
+npm run vercel:env          # 環境変数をローカルにダウンロード
+```
+
 ### データベース
 
 ```bash
