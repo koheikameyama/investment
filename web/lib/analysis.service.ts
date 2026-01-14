@@ -92,7 +92,7 @@ export class AnalysisService {
       const aiResult = await OpenAIService.analyzeStock(analysisInput);
 
       // 5. トランザクション処理でAnalysisとPriceHistoryに保存
-      const analysisId = await prisma.$transaction(async (tx) => {
+      const analysisId = await prisma.$transaction(async (tx: any) => {
         // Analysis保存
         const analysis = await tx.analysis.create({
           data: {
