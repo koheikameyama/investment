@@ -66,7 +66,7 @@ export const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
                 サービス概要
               </h3>
               <p className="text-surface-700 leading-relaxed">
-                このサービスは、<span className="font-bold text-primary-600">AI（GPT-4o mini）を活用した日本株の分析ツール</span>です。
+                このサービスは、<span className="font-bold text-primary-600">AIを活用した日本株の分析ツール</span>です。
                 日経225採用銘柄から時価総額上位・主要セクター代表15銘柄を厳選し、定期的に最新の財務データと市場動向を分析。
                 「買い」「売り」「様子見」の投資推奨と、その理由をわかりやすく提示します。
               </p>

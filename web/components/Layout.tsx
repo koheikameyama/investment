@@ -72,7 +72,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                             </span>
                         </div>
                         <p className="text-xs text-surface-400">
-                            Powered by OpenAI GPT-4o mini • Made with ❤️ for investors
+                            Powered by AI • Made with ❤️ for investors
                         </p>
                     </div>
                 </div>
