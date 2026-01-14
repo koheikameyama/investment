@@ -3,12 +3,27 @@
  */
 
 import type { Metadata } from 'next';
+import { Inter, Outfit } from 'next/font/google';
 import './globals.css';
 import { Providers } from './providers';
 
+const inter = Inter({
+  subsets: ['latin'],
+  weight: ['300', '400', '500', '600', '700'],
+  variable: '--font-inter',
+  display: 'swap',
+});
+
+const outfit = Outfit({
+  subsets: ['latin'],
+  weight: ['600', '700', '800'],
+  variable: '--font-outfit',
+  display: 'swap',
+});
+
 export const metadata: Metadata = {
   title: 'AI株式分析ツール',
-  description: 'AIによる日本株・米国株の投資分析ツール',
+  description: 'AIによる日本株の投資分析ツール',
 };
 
 export default function RootLayout({
@@ -17,16 +32,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="ja">
-      <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@600;700;800&display=swap"
-          rel="stylesheet"
-        />
-      </head>
-      <body>
+    <html lang="ja" className={`${inter.variable} ${outfit.variable}`}>
+      <body className={inter.className}>
         <Providers>{children}</Providers>
       </body>
     </html>
