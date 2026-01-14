@@ -4,7 +4,7 @@
 
 'use client';
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 
 interface AdBannerProps {
   /**
@@ -47,10 +47,25 @@ export const AdBanner: React.FC<AdBannerProps> = ({
   fullWidthResponsive = true,
   className = '',
 }) => {
+  const adRef = useRef<HTMLElement>(null);
+  const isLoadedRef = useRef(false);
+
   useEffect(() => {
+    // 既に読み込み済みの場合はスキップ
+    if (isLoadedRef.current) return;
+
     try {
       // Google AdSenseの広告をプッシュ
-      (window.adsbygoogle = window.adsbygoogle || []).push({});
+      if (typeof window !== 'undefined' && adRef.current) {
+        // 既に広告が読み込まれているかチェック
+        const isAdLoaded = adRef.current.getAttribute('data-adsbygoogle-status');
+
+        if (!isAdLoaded) {
+          const adsbygoogle = (window.adsbygoogle = window.adsbygoogle || []);
+          adsbygoogle.push({});
+          isLoadedRef.current = true;
+        }
+      }
     } catch (err) {
       console.error('AdSense error:', err);
     }
@@ -59,6 +74,7 @@ export const AdBanner: React.FC<AdBannerProps> = ({
   return (
     <div className={`ad-container ${className}`}>
       <ins
+        ref={adRef}
         className="adsbygoogle"
         style={{ display: 'block' }}
         data-ad-client="ca-pub-7558679080857597"
