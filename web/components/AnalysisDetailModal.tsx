@@ -7,6 +7,7 @@ import React, { useEffect } from 'react';
 import type { AnalysisDetail, Recommendation } from '../types/analysis';
 import { useAnalysisDetail } from '../hooks/useAnalyses';
 import { LoadingSpinner } from './LoadingSpinner';
+import { Tooltip as InfoTooltip } from './Tooltip';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 interface AnalysisDetailModalProps {
@@ -155,21 +156,32 @@ export const AnalysisDetailModal: React.FC<AnalysisDetailModalProps> = ({
                   </h4>
                   <div className="grid grid-cols-2 gap-y-4 gap-x-2">
                     <div className="p-2">
-                      <div className="text-xs text-surface-500">PER (Price/Earnings)</div>
+                      <div className="text-xs text-surface-500 flex items-center">
+                        PER (Price/Earnings)
+                        <InfoTooltip content="株価収益率。株価が1株あたり利益の何倍かを示す指標です。一般的に15倍前後が適正とされ、低いほど割安と判断されます。" />
+                      </div>
                       <div className="text-lg font-semibold text-surface-900">{analysis.peRatio || 'N/A'}</div>
                     </div>
                     <div className="p-2">
-                      <div className="text-xs text-surface-500">PBR (Price/Book)</div>
+                      <div className="text-xs text-surface-500 flex items-center">
+                        PBR (Price/Book)
+                        <InfoTooltip content="株価純資産倍率。株価が1株あたり純資産の何倍かを示す指標です。1倍を下回ると割安、1.5倍以上だと割高とされることが多いです。" />
+                      </div>
                       <div className="text-lg font-semibold text-surface-900">{analysis.pbRatio || 'N/A'}</div>
                     </div>
                     <div className="p-2">
-                      <div className="text-xs text-surface-500">ROE (Return on Equity)</div>
+                      <div className="text-xs text-surface-500 flex items-center">
+                        ROE (Return on Equity)
+                        <InfoTooltip content="自己資本利益率。企業が株主の資本をどれだけ効率的に使って利益を上げているかを示す指標です。10%以上が優良企業の目安とされます。" />
+                      </div>
                       <div className="text-lg font-semibold text-surface-900">{analysis.roe ? `${analysis.roe}%` : 'N/A'}</div>
                     </div>
-                    {/* Placeholder for dividend or other metric */}
                     <div className="p-2">
-                      <div className="text-xs text-surface-500">Market Cap</div>
-                      <div className="text-lg font-semibold text-surface-900">-</div>
+                      <div className="text-xs text-surface-500 flex items-center">
+                        配当利回り
+                        <InfoTooltip content="年間配当金が株価の何%かを示す指標です。高いほど株主への還元が手厚いと言えます。日本株では2-3%が平均的です。" />
+                      </div>
+                      <div className="text-lg font-semibold text-surface-900">{analysis.dividendYield ? `${(analysis.dividendYield / 100).toFixed(2)}%` : 'N/A'}</div>
                     </div>
                   </div>
                 </div>
