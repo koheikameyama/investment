@@ -123,10 +123,6 @@ class StockQueue:
 # グローバルトラッカー
 usage_tracker = APIUsageTracker()
 
-# 並列処理設定
-# 並列処理設定
-MAX_WORKERS = 1  # GitHub Actionsでのレート制限回避のため1ワーカーに設定
-
 
 class StockData:
     """株式データクラス"""
@@ -452,13 +448,12 @@ def save_price_history_to_db(conn, stock_id: str, stock_data: StockData) -> bool
         return False
 
 
-def process_single_stock(stock: Dict[str, Any], queue: StockQueue) -> bool:
+def process_single_stock(stock: Dict[str, Any]) -> bool:
     """
-    単一銘柄を処理（並列実行用）
+    単一銘柄を処理
 
     Args:
         stock: 銘柄データ
-        queue: キュー管理オブジェクト
 
     Returns:
         bool: 処理が成功したかどうか
@@ -467,7 +462,7 @@ def process_single_stock(stock: Dict[str, Any], queue: StockQueue) -> bool:
     ticker = stock['ticker']
 
     try:
-        # データベース接続（スレッドごとに接続を作成）
+        # データベース接続
         conn = psycopg2.connect(DATABASE_URL)
 
         # 今日の日付を取得（日付のみ、時刻は00:00:00）
@@ -483,21 +478,16 @@ def process_single_stock(stock: Dict[str, Any], queue: StockQueue) -> bool:
             existing_today = cur.fetchone()
 
         if existing_today:
-            with print_lock:
-                print(f"⏭️  {ticker}: 本日分の分析済み（スキップ）")
-            queue.mark_success()
+            print(f"⏭️  {ticker}: 本日分の分析済み（スキップ）")
             return True
 
-        with print_lock:
-            print(f"🔄 {ticker}: 処理開始...")
+        print(f"🔄 {ticker}: 処理開始...")
 
         # 株価データ取得
         stock_data = fetch_stock_data(ticker, stock['market'])
 
         if stock_data.error or stock_data.current_price == 0:
-            with print_lock:
-                print(f"⚠️  {ticker}: データ取得失敗")
-            queue.mark_failure()
+            print(f"⚠️  {ticker}: データ取得失敗")
             return False
 
         # AI分析実行
@@ -507,20 +497,14 @@ def process_single_stock(stock: Dict[str, Any], queue: StockQueue) -> bool:
         if save_analysis_to_db(conn, stock['id'], stock_data, analysis):
             # 株価履歴も保存
             save_price_history_to_db(conn, stock['id'], stock_data)
-            with print_lock:
-                print(f"✅ {ticker}: {analysis['recommendation']} ({analysis['confidence_score']}%) 完了")
-            queue.mark_success()
+            print(f"✅ {ticker}: {analysis['recommendation']} ({analysis['confidence_score']}%) 完了")
             return True
         else:
-            with print_lock:
-                print(f"❌ {ticker}: DB保存失敗")
-            queue.mark_failure()
+            print(f"❌ {ticker}: DB保存失敗")
             return False
 
     except Exception as e:
-        with print_lock:
-            print(f"❌ {ticker}: エラー - {str(e)[:50]}")
-        queue.mark_failure()
+        print(f"❌ {ticker}: エラー - {str(e)[:50]}")
         return False
     finally:
         if conn:
@@ -594,7 +578,7 @@ def main():
     print("\n" + "=" * 50)
     print("🚀 AI株式分析バッチジョブ開始 (Python + yfinance)")
     print(f"⏰ 開始時刻: {start_time.strftime('%Y-%m-%d %H:%M:%S')}")
-    print(f"🔄 並列処理: {MAX_WORKERS}ワーカー")
+    print("🔄 順次処理モード")
     print("=" * 50 + "\n")
 
     conn = None
@@ -611,42 +595,31 @@ def main():
             cur.execute('SELECT id, ticker, market FROM stocks ORDER BY ticker')
             stocks = cur.fetchall()
 
-        # キューを作成
-        queue = StockQueue(stocks)
-        print(f"📋 対象銘柄数: {queue.total}件\n")
+        total_stocks = len(stocks)
+        print(f"📋 対象銘柄数: {total_stocks}件\n")
 
-        if queue.total == 0:
+        if total_stocks == 0:
             print("⚠️ 分析対象の銘柄が見つかりませんでした")
             log_batch_job(conn, start_time, 0, 0, 0, "分析対象の銘柄が見つかりませんでした")
             return
 
-        # 並列処理で銘柄を処理
-        print(f"🔄 {MAX_WORKERS}ワーカーで並列処理を開始します...\n")
-
-        with ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
-            # すべての銘柄を並列実行するタスクを投入
-            futures = {
-                executor.submit(process_single_stock, stock, queue): stock
-                for stock in stocks
-            }
-
-            # 完了したタスクから結果を取得
-            for future in as_completed(futures):
-                stock = futures[future]
-                try:
-                    success = future.result()
-                    if success:
-                        success_count += 1
-                    else:
-                        failure_count += 1
-                except Exception as e:
-                    with print_lock:
-                        print(f"  ❌ {stock['ticker']}: 予期しないエラー: {e}")
-                    failure_count += 1
+        # 順次処理
+        for i, stock in enumerate(stocks):
+            print(f"[{i + 1}/{total_stocks}] ", end="")
+            success = process_single_stock(stock)
+            
+            if success:
+                success_count += 1
+            else:
+                failure_count += 1
+                
+            # 少し待機（レート制限対策）
+            if i < total_stocks - 1:
+                time.sleep(1)
 
         # バッチジョブログを記録
         error_message = f"{failure_count}件の銘柄分析に失敗しました" if failure_count > 0 else None
-        log_batch_job(conn, start_time, queue.total, success_count, failure_count, error_message)
+        log_batch_job(conn, start_time, total_stocks, success_count, failure_count, error_message)
 
     except Exception as e:
         print(f"\n❌ バッチジョブでエラーが発生しました: {e}")
@@ -665,7 +638,7 @@ def main():
     print("✅ バッチジョブ完了")
     print(f"⏱️  処理時間: {duration:.2f}秒")
     print("📊 結果サマリー:")
-    print(f"   - 対象銘柄数: {queue.total}")
+    print(f"   - 対象銘柄数: {len(stocks)}")
     print(f"   - 成功: {success_count}")
     print(f"   - 失敗: {failure_count}")
     print("=" * 50)
