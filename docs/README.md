@@ -12,8 +12,8 @@ AI株式分析ツールの設計書・戦略書・デプロイ情報をまとめ
 
 | ドキュメント | 概要 | 更新日 |
 |-------------|------|--------|
-| [VISION_AND_STRATEGY.md](./strategy/VISION_AND_STRATEGY.md) | サービスの長期ビジョン、3つの進化軸、5年後の理想像、マイルストーン、競合分析、マネタイズ戦略 | 2026-01-14 |
-| [ADVANCED_FEATURES_PROPOSAL.md](./strategy/ADVANCED_FEATURES_PROPOSAL.md) | 革新的機能提案（オルタナティブデータ活用、行動経済学ハック、Blind Sideプロダクト案） | 2026-01-14 |
+| [STRATEGY.md](./strategy/STRATEGY.md) | **統合戦略書**：二本柱並行開発戦略（メイントラック + イノベーショントラック）、4つの進化軸、統合ロードマップ、リソース配分計画 | 2026-01-15 |
+| [archive/](./strategy/archive/) | 過去の戦略ドキュメント（VISION_AND_STRATEGY.md, ADVANCED_FEATURES_PROPOSAL.md） | - |
 
 ---
 
@@ -45,8 +45,8 @@ AI株式分析ツールの設計書・戦略書・デプロイ情報をまとめ
 
 ```
 1. サービス理解
-   └─ strategy/VISION_AND_STRATEGY.md
-      「このサービスが何を目指しているか」
+   └─ strategy/STRATEGY.md
+      「このサービスが何を目指しているか（統合戦略書）」
 
 2. 技術設計理解
    └─ design/ENHANCED_ANALYSIS_DESIGN.md
@@ -62,7 +62,7 @@ AI株式分析ツールの設計書・戦略書・デプロイ情報をまとめ
 ```
 実装前:
   ├─ design/ENHANCED_ANALYSIS_DESIGN.md（必読）
-  └─ strategy/VISION_AND_STRATEGY.md（優先順位判断）
+  └─ strategy/STRATEGY.md（優先順位判断・全体戦略）
 
 実装中:
   └─ design/ENHANCED_ANALYSIS_DESIGN.md（参照）
@@ -71,20 +71,26 @@ AI株式分析ツールの設計書・戦略書・デプロイ情報をまとめ
   └─ deployment/DEPLOYMENT.md
 
 新機能検討時:
-  └─ strategy/ADVANCED_FEATURES_PROPOSAL.md
+  └─ strategy/STRATEGY.md（メイントラック・イノベーショントラック両方）
 ```
 
 ---
 
 ## 📊 ドキュメント統計
 
-- **総ドキュメント数**: 5ファイル
-- **総行数**: 約3,700行
-- **最終更新**: 2026-01-14
+- **総ドキュメント数**: 5ファイル（+ アーカイブ2件）
+- **総行数**: 約2,700行（統合により効率化）
+- **最終更新**: 2026-01-15
 
 ---
 
 ## 🔄 更新履歴
+
+### 2026-01-15
+- **STRATEGY.md作成**：VISION_AND_STRATEGY.mdとADVANCED_FEATURES_PROPOSAL.mdを統合
+- 二本柱並行開発戦略（メイントラック + イノベーショントラック）を策定
+- 古い戦略ドキュメントをstrategy/archive/に移動
+- README.md更新（統合戦略書への参照に変更）
 
 ### 2026-01-14
 - ドキュメント構成を整理（カテゴリ別ディレクトリ化）

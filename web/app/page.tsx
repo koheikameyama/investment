@@ -99,7 +99,7 @@ export default function Home() {
 
         {/* 広告エリア1: ヘッダー下 */}
         <AdBanner
-          adSlot="1234567890"
+          adSlot="7965940641"
           adFormat="auto"
           className="my-4"
         />
@@ -137,7 +137,7 @@ export default function Home() {
           <>
             {/* 広告エリア2: テーブル前 */}
             <AdBanner
-              adSlot="2345678901"
+              adSlot="7973679503"
               adFormat="auto"
               className="my-6"
             />
@@ -157,7 +157,7 @@ export default function Home() {
             {/* 広告エリア3: テーブル後 */}
             {analyses.length > 0 && (
               <AdBanner
-                adSlot="3456789012"
+                adSlot="5999264618"
                 adFormat="auto"
                 className="my-6"
               />

@@ -47,7 +47,7 @@ export const AdBanner: React.FC<AdBannerProps> = ({
   fullWidthResponsive = true,
   className = '',
 }) => {
-  const adRef = useRef<HTMLElement>(null);
+  const adRef = useRef<HTMLModElement>(null);
   const isLoadedRef = useRef(false);
 
   useEffect(() => {
