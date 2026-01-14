@@ -131,11 +131,12 @@ export class YahooFinanceService {
    */
   static async fetchMultipleStocks(
     tickers: string[],
-    delayMs: number = 1000
+    delayMs: number = 3000 // デフォルト3秒に増やす
   ): Promise<StockInfo[]> {
     const results: StockInfo[] = [];
     let successCount = 0;
     let failureCount = 0;
+    let consecutiveErrors = 0;
 
     console.log(`📊 日本株${tickers.length}銘柄のデータ取得を開始...`);
 
@@ -143,27 +144,42 @@ export class YahooFinanceService {
       const ticker = tickers[i];
 
       try {
-        const stockInfo = await this.fetchStockData(ticker);
+        // リトライ機構付きで取得
+        const stockInfo = await this.fetchStockDataWithRetry(ticker, 5);
 
         if (stockInfo) {
           results.push(stockInfo);
           successCount++;
+          consecutiveErrors = 0; // 成功したらリセット
         } else {
           failureCount++;
+          consecutiveErrors++;
         }
 
         // 進捗表示
-        if ((i + 1) % 10 === 0) {
+        if ((i + 1) % 5 === 0) {
           console.log(`進捗: ${i + 1}/${tickers.length} (成功: ${successCount}, 失敗: ${failureCount})`);
         }
 
+        // 連続エラーが多い場合は待機時間を増やす
+        const currentDelay = consecutiveErrors > 2
+          ? delayMs * 2
+          : delayMs;
+
         // レート制限対策のための遅延
         if (i < tickers.length - 1) {
-          await this.delay(delayMs);
+          await this.delay(currentDelay);
         }
       } catch (error) {
         console.error(`銘柄データ取得エラー: ${ticker}`, error);
         failureCount++;
+        consecutiveErrors++;
+
+        // 429エラーの場合は長めに待機
+        if (error instanceof Error && error.message.includes('429')) {
+          console.log('⏳ レート制限検出。30秒待機します...');
+          await this.delay(30000);
+        }
       }
     }
 
@@ -216,7 +232,7 @@ export class YahooFinanceService {
    */
   static async fetchStockDataWithRetry(
     ticker: string,
-    maxRetries: number = 3
+    maxRetries: number = 5
   ): Promise<StockInfo | null> {
     let lastError: Error | null = null;
 
@@ -228,11 +244,15 @@ export class YahooFinanceService {
         }
       } catch (error) {
         lastError = error as Error;
-        console.warn(`リトライ ${attempt}/${maxRetries} 失敗: ${ticker}`);
+        const is429Error = error instanceof Error && error.message.includes('429');
 
-        // 指数バックオフ
+        console.warn(`リトライ ${attempt}/${maxRetries} 失敗: ${ticker}${is429Error ? ' (429 Too Many Requests)' : ''}`);
+
+        // 指数バックオフ（429エラーの場合はさらに長く）
         if (attempt < maxRetries) {
-          const backoffTime = Math.pow(2, attempt) * 1000;
+          const baseBackoff = is429Error ? 10000 : 2000; // 429なら10秒、それ以外は2秒
+          const backoffTime = baseBackoff * Math.pow(2, attempt - 1);
+          console.log(`⏳ ${backoffTime / 1000}秒待機...`);
           await this.delay(backoffTime);
         }
       }

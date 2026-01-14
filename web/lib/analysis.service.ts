@@ -185,9 +185,9 @@ export class AnalysisService {
         );
       }
 
-      // レート制限対策: 各分析の間に少し遅延
+      // レート制限対策: 各分析の間に遅延（Yahoo Finance APIの429エラー対策）
       if (i < tickers.length - 1) {
-        await new Promise((resolve) => setTimeout(resolve, 2000)); // 2秒待機
+        await new Promise((resolve) => setTimeout(resolve, 5000)); // 5秒待機
       }
     }
 
