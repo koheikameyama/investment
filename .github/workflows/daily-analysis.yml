@@ -5,6 +5,14 @@ on:
   schedule:
     - cron: '0 0 * * *'
 
+  # プッシュ時のテスト実行（mainブランチのみ）
+  push:
+    branches:
+      - main
+    paths:
+      - 'batch/**'
+      - '.github/workflows/daily-analysis.yml'
+
   # 手動実行も可能
   workflow_dispatch:
 
