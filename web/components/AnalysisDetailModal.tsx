@@ -172,28 +172,36 @@ export const AnalysisDetailModal: React.FC<AnalysisDetailModalProps> = ({
                         PER (Price/Earnings)
                         <InfoTooltip content="株価収益率。株価が1株あたり利益の何倍かを示す指標です。一般的に15倍前後が適正とされ、低いほど割安と判断されます。" />
                       </div>
-                      <div className="text-lg font-semibold text-surface-900">{analysis.peRatio || 'N/A'}</div>
+                      <div className="text-lg font-semibold text-surface-900">
+                        {analysis.peRatio ? Number(analysis.peRatio).toFixed(2) : 'N/A'}
+                      </div>
                     </div>
                     <div className="p-2">
                       <div className="text-xs text-surface-500 flex items-center">
                         PBR (Price/Book)
                         <InfoTooltip content="株価純資産倍率。株価が1株あたり純資産の何倍かを示す指標です。1倍を下回ると割安、1.5倍以上だと割高とされることが多いです。" />
                       </div>
-                      <div className="text-lg font-semibold text-surface-900">{analysis.pbRatio || 'N/A'}</div>
+                      <div className="text-lg font-semibold text-surface-900">
+                        {analysis.pbRatio ? Number(analysis.pbRatio).toFixed(2) : 'N/A'}
+                      </div>
                     </div>
                     <div className="p-2">
                       <div className="text-xs text-surface-500 flex items-center">
                         ROE (Return on Equity)
                         <InfoTooltip content="自己資本利益率。企業が株主の資本をどれだけ効率的に使って利益を上げているかを示す指標です。10%以上が優良企業の目安とされます。" />
                       </div>
-                      <div className="text-lg font-semibold text-surface-900">{analysis.roe ? `${analysis.roe}%` : 'N/A'}</div>
+                      <div className="text-lg font-semibold text-surface-900">
+                        {analysis.roe ? `${Number(analysis.roe).toFixed(2)}%` : 'N/A'}
+                      </div>
                     </div>
                     <div className="p-2">
                       <div className="text-xs text-surface-500 flex items-center">
                         配当利回り
                         <InfoTooltip content="年間配当金が株価の何%かを示す指標です。高いほど株主への還元が手厚いと言えます。日本株では2-3%が平均的です。" />
                       </div>
-                      <div className="text-lg font-semibold text-surface-900">{analysis.dividendYield ? `${(analysis.dividendYield / 100).toFixed(2)}%` : 'N/A'}</div>
+                      <div className="text-lg font-semibold text-surface-900">
+                        {analysis.dividendYield ? `${(Number(analysis.dividendYield) / 100).toFixed(2)}%` : 'N/A'}
+                      </div>
                     </div>
                   </div>
                 </div>
