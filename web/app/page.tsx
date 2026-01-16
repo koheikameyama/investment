@@ -138,13 +138,6 @@ export default function Home() {
         {/* Content */}
         {!isLoadingAnalyses && !analysesError && (
           <>
-            {/* 広告エリア2: テーブル前 */}
-            <AdBanner
-              adSlot="7973679503"
-              adFormat="auto"
-              className="my-6"
-            />
-
             <AnalysisTable
               analyses={analyses}
               onDetailClick={handleDetailClick}
