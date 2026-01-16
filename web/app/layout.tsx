@@ -24,7 +24,37 @@ const outfit = Outfit({
 
 export const metadata: Metadata = {
   title: 'AI株式分析ツール',
-  description: 'AIによる日本株の投資分析ツール',
+  description: 'AIが日本株の主要15銘柄を毎日自動分析。投資判断（Buy/Hold/Sell）を詳細な根拠付きで提供します。初心者にもわかりやすい無料の株式分析サービスです。',
+  keywords: ['AI', '株式分析', '日本株', '投資', 'Buy/Hold/Sell', '株価予測', '個人投資家'],
+  authors: [{ name: 'Stock Analyzer' }],
+  openGraph: {
+    type: 'website',
+    locale: 'ja_JP',
+    url: 'https://stock-analyzer.jp/',
+    siteName: 'AI株式分析ツール',
+    title: 'AI株式分析ツール - 日本株の投資判断を毎日AIが分析',
+    description: 'AIが日本株の主要15銘柄を毎日自動分析。投資判断（Buy/Hold/Sell）を詳細な根拠付きで提供します。',
+    images: [
+      {
+        url: 'https://stock-analyzer.jp/images/logo.png',
+        width: 512,
+        height: 512,
+        alt: 'AI株式分析ツール',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary',
+    site: '@stockAnalyzerJP',
+    creator: '@stockAnalyzerJP',
+    title: 'AI株式分析ツール - 日本株の投資判断を毎日AIが分析',
+    description: 'AIが日本株の主要15銘柄を毎日自動分析。投資判断を詳細な根拠付きで提供します。',
+    images: ['https://stock-analyzer.jp/images/logo.png'],
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
 };
 
 export default function RootLayout({
