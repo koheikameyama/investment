@@ -29,7 +29,7 @@ jobs:
       - name: Generate and send daily GA report
         env:
           GA4_CREDENTIALS_JSON: ${{ secrets.GA4_CREDENTIALS_JSON }}
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_WEBHOOK_URL: ${{ secrets.GA_SLACK_WEBHOOK_URL }}
         run: |
           cd batch
           python daily_ga_report.py
