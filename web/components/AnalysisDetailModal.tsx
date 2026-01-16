@@ -4,6 +4,7 @@
  */
 
 import React, { useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import type { AnalysisDetail, Recommendation } from '../types/analysis';
 import { useAnalysisDetail } from '../hooks/useAnalyses';
 import { LoadingSpinner } from './LoadingSpinner';
@@ -75,7 +76,7 @@ export const AnalysisDetailModal: React.FC<AnalysisDetailModalProps> = ({
       }))
     : [];
 
-  return (
+  const modalContent = (
     <div
       className="fixed inset-0 bg-surface-900/50 backdrop-blur-sm flex items-center justify-center z-[100] p-4 transition-all duration-300"
       onClick={onClose}
@@ -265,4 +266,8 @@ export const AnalysisDetailModal: React.FC<AnalysisDetailModalProps> = ({
       </div>
     </div>
   );
+
+  // ブラウザ環境でのみPortalを使用
+  if (typeof window === 'undefined') return null;
+  return createPortal(modalContent, document.body);
 };
