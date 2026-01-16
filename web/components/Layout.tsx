@@ -62,7 +62,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
             {/* フッター */}
             <footer className="bg-white/80 backdrop-blur-sm border-t border-surface-200 mt-auto">
                 <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-                    <div className="text-center space-y-2">
+                    <div className="text-center space-y-4">
                         <div className="flex items-center justify-center gap-2 text-amber-600 bg-amber-50 border border-amber-200 rounded-lg py-2 px-4 inline-flex">
                             <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                                 <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
@@ -71,6 +71,24 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                                 このツールは投資判断の参考情報です。最終的な投資判断はご自身で行ってください
                             </span>
                         </div>
+
+                        {/* フッターナビゲーション */}
+                        <nav className="flex items-center justify-center gap-4 text-sm">
+                            <a
+                                href="/privacy-policy"
+                                className="text-surface-600 hover:text-surface-900 transition-colors"
+                            >
+                                プライバシーポリシー
+                            </a>
+                            <span className="text-surface-300">|</span>
+                            <a
+                                href="/terms"
+                                className="text-surface-600 hover:text-surface-900 transition-colors"
+                            >
+                                利用規約
+                            </a>
+                        </nav>
+
                         <p className="text-xs text-surface-400">
                             Powered by AI • Made with ❤️ for investors
                         </p>
