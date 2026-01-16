@@ -101,11 +101,11 @@ export default function Home() {
         </div>
 
         {/* 広告エリア1: ヘッダー下 */}
-        {/* <AdBanner
+        <AdBanner
           adSlot="7965940641"
           adFormat="auto"
           className="my-4"
-        /> */}
+        />
 
         {/* Controls */}
         <div className="flex flex-col sm:flex-row gap-4 justify-end items-start sm:items-center bg-white p-4 rounded-xl border border-surface-200 shadow-sm">
@@ -151,13 +151,13 @@ export default function Home() {
             )}
 
             {/* 広告エリア3: テーブル後 */}
-            {/* {analyses.length > 0 && (
+            {analyses.length > 0 && (
               <AdBanner
                 adSlot="5999264618"
                 adFormat="auto"
                 className="my-6"
               />
-            )} */}
+            )}
           </>
         )}
 
