@@ -65,6 +65,20 @@ export default function RootLayout({
   return (
     <html lang="ja" className={`${inter.variable} ${outfit.variable}`}>
       <head>
+        {/* Google Analytics 4 */}
+        <Script
+          src="https://www.googletagmanager.com/gtag/js?id=G-0283BB9Y5B"
+          strategy="afterInteractive"
+        />
+        <Script id="google-analytics" strategy="afterInteractive">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', 'G-0283BB9Y5B');
+          `}
+        </Script>
+
         {/* Google AdSense */}
         <Script
           async
