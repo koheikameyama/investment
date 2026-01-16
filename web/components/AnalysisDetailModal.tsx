@@ -69,7 +69,7 @@ export const AnalysisDetailModal: React.FC<AnalysisDetailModalProps> = ({
 
   return (
     <div
-      className="fixed inset-0 bg-surface-900/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 transition-all duration-300"
+      className="fixed inset-0 bg-surface-900/50 backdrop-blur-sm flex items-center justify-center z-[100] p-4 transition-all duration-300"
       onClick={onClose}
     >
       <div
