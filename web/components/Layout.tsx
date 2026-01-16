@@ -6,6 +6,7 @@
 
 import React, { useState } from 'react';
 import { AboutModal } from './AboutModal';
+import { ShareButtons } from './ShareButtons';
 
 interface LayoutProps {
     children: React.ReactNode;
@@ -110,6 +111,11 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                                 X (Twitter)
                             </a>
                         </nav>
+
+                        {/* シェアボタン */}
+                        <div className="flex justify-center">
+                            <ShareButtons />
+                        </div>
 
                         <p className="text-xs text-surface-400">
                             Powered by AI • Made with ❤️ for investors
