@@ -1,9 +1,9 @@
 name: Weekly Summary for X Post
 
 on:
-  # 毎週月曜 UTC 0:00（日本時間 9:00）に実行
+  # 毎週月曜 UTC 3:00（日本時間 12:00）に実行
   schedule:
-    - cron: '0 0 * * 1'
+    - cron: '0 3 * * 1'
 
   # 手動実行も可能
   workflow_dispatch:
