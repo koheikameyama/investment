@@ -198,20 +198,25 @@ python3 batch_analysis.py
 
 - [デプロイ手順](./DEPLOYMENT.md)
 - [バッチ処理詳細](./batch/README.md)
+- [ブランチ運用戦略](./docs/branch_strategy.md)
+- [機能リリース時のX投稿テンプレート](./docs/feature_release_posts.md)
 
 ## 🤝 開発
 
 ### 開発フロー
 
+詳細は [ブランチ運用戦略](./docs/branch_strategy.md) を参照してください。
+
 1. featureブランチを作成
 2. 変更をコミット
-3. プルリクエストを作成
-4. レビュー後マージ
+3. プルリクエストを作成（適切な`version:*`ラベルを付与）
+4. mainにマージ → 自動的にリリース作成
 
 ### コード規約
 
 - ESLint設定に従う
 - コミットメッセージは明確に
+- セマンティックバージョニングに従う
 
 ## ⚠️ 免責事項
 
