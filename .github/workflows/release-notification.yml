@@ -1,0 +1,109 @@
+name: Release Notification
+
+on:
+  # GitHub Release作成時に自動実行
+  release:
+    types: [published]
+
+  # 手動実行も可能
+  workflow_dispatch:
+    inputs:
+      title:
+        description: 'リリースタイトル（例: v1.1.0 - 配当利回り修正など）'
+        required: true
+        type: string
+      changes:
+        description: '変更内容（改行区切りで箇条書き）'
+        required: true
+        type: string
+      post_template:
+        description: 'X投稿テンプレート（省略可、自動生成されます）'
+        required: false
+        type: string
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Prepare notification message
+        id: prepare
+        run: |
+          if [ "${{ github.event_name }}" = "release" ]; then
+            # GitHub Releaseから情報を取得
+            TITLE="${{ github.event.release.name }}"
+            BODY="${{ github.event.release.body }}"
+
+            # X投稿テンプレートを生成
+            POST_TEMPLATE="【アップデート】${TITLE}
+
+$BODY
+
+https://stock-analyzer.jp/
+
+#AI株式分析 #投資ツール"
+          else
+            # 手動実行の場合は入力値を使用
+            TITLE="${{ github.event.inputs.title }}"
+            BODY="${{ github.event.inputs.changes }}"
+
+            if [ -n "${{ github.event.inputs.post_template }}" ]; then
+              POST_TEMPLATE="${{ github.event.inputs.post_template }}"
+            else
+              # テンプレートが指定されていない場合は自動生成
+              POST_TEMPLATE="【アップデート】${TITLE}
+
+$BODY
+
+https://stock-analyzer.jp/
+
+#AI株式分析 #投資ツール"
+            fi
+          fi
+
+          # 環境変数に保存（改行を含むのでファイル経由）
+          echo "TITLE=$TITLE" >> $GITHUB_ENV
+          echo "BODY<<EOF" >> $GITHUB_ENV
+          echo "$BODY" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+          echo "POST_TEMPLATE<<EOF" >> $GITHUB_ENV
+          echo "$POST_TEMPLATE" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+
+      - name: Send to Slack
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: |
+          # Slack通知メッセージを作成
+          MESSAGE="📢 *リリース通知*
+
+*【タイトル】*
+${TITLE}
+
+*【変更内容】*
+${BODY}
+
+---
+💡 *X投稿候補:*
+\`\`\`
+${POST_TEMPLATE}
+\`\`\`
+
+📝 このメッセージをコピーしてXに投稿してください"
+
+          # Slackに送信
+          curl -X POST "$SLACK_WEBHOOK_URL" \
+            -H 'Content-Type: application/json' \
+            -d "$(cat <<EOF
+{
+  "text": "$MESSAGE",
+  "username": "Release Bot",
+  "icon_emoji": ":rocket:"
+}
+EOF
+)"
+
+          echo "✅ Slackへの送信成功"
