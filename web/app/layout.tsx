@@ -78,7 +78,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ja" className={`${inter.variable} ${outfit.variable}`}>
-      <head>
+      <body className={inter.className}>
         {/* Google Analytics 4 */}
         <Script
           src="https://www.googletagmanager.com/gtag/js?id=G-0283BB9Y5B"
@@ -95,13 +95,10 @@ export default function RootLayout({
 
         {/* Google AdSense */}
         <Script
-          async
           src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7558679080857597"
-          crossOrigin="anonymous"
           strategy="afterInteractive"
         />
-      </head>
-      <body className={inter.className}>
+
         <Providers>{children}</Providers>
         <InstallPrompt />
       </body>
